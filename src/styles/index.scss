@@ -1,0 +1,451 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  font-family:
+    Inter, 'PingFang SC', 'Microsoft YaHei', system-ui, -apple-system, BlinkMacSystemFont, sans-serif;
+  color: #172033;
+  background: #edf3f1;
+  font-synthesis: none;
+  text-rendering: optimizeLegibility;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+body {
+  @apply m-0 min-h-screen bg-[#edf3f1];
+}
+
+button,
+input,
+select {
+  font: inherit;
+}
+
+button {
+  cursor: pointer;
+}
+
+.app-shell {
+  @apply mx-auto flex min-h-screen w-full max-w-[1480px] flex-col gap-5 px-4 py-5 text-clinical-ink sm:px-6 lg:px-8;
+}
+
+.top-strip {
+  @apply flex flex-col justify-between gap-5 rounded-lg bg-white p-5 shadow-panel lg:flex-row lg:items-center;
+}
+
+.brand-lockup {
+  @apply flex min-w-0 items-center gap-4;
+}
+
+.brand-image {
+  @apply h-20 w-28 shrink-0 rounded-lg object-cover;
+}
+
+.eyebrow {
+  @apply mb-1 text-xs font-bold uppercase tracking-normal text-clinical-pulse;
+}
+
+h1,
+h2,
+p {
+  @apply m-0;
+}
+
+h1 {
+  @apply text-2xl font-black text-clinical-ink sm:text-3xl;
+}
+
+h2 {
+  @apply text-xl font-black text-clinical-ink;
+}
+
+.subtitle {
+  @apply mt-2 text-sm text-clinical-muted;
+}
+
+.route-tabs {
+  @apply flex flex-wrap gap-2;
+}
+
+.route-tab,
+.btn {
+  @apply h-11 rounded-lg border px-5 text-sm font-bold transition;
+}
+
+.route-tab {
+  @apply border-clinical-line bg-white text-clinical-muted hover:bg-clinical-surface;
+}
+
+.route-tab.active {
+  @apply border-clinical-pulse bg-clinical-pulse text-white;
+}
+
+.btn-primary {
+  @apply border-clinical-pulse bg-clinical-pulse text-white hover:bg-[#166173];
+}
+
+.btn-secondary {
+  @apply border-clinical-line bg-white text-clinical-ink hover:bg-clinical-surface;
+}
+
+.btn:disabled {
+  @apply cursor-not-allowed opacity-45 hover:bg-inherit;
+}
+
+.patient-card {
+  @apply grid gap-5 rounded-lg bg-white p-5 shadow-panel xl:grid-cols-[280px_1fr];
+}
+
+.patient-main {
+  @apply min-w-0;
+
+  h2 {
+    @apply mt-3 text-3xl;
+  }
+
+  p {
+    @apply mt-2 text-sm text-clinical-muted;
+  }
+}
+
+.ward-pill {
+  @apply inline-flex rounded-md bg-[#dff3ec] px-3 py-1 text-sm font-bold text-[#226b4f];
+}
+
+.patient-grid {
+  @apply grid gap-3 sm:grid-cols-2 xl:grid-cols-4;
+}
+
+.standard-fields {
+  div {
+    @apply min-h-20 rounded-lg border border-clinical-line bg-clinical-surface p-3;
+  }
+
+  span {
+    @apply block text-xs font-bold text-clinical-muted;
+  }
+
+  strong {
+    @apply mt-2 block break-words text-base text-clinical-ink;
+  }
+}
+
+.chart-panel,
+.entry-panel {
+  @apply rounded-lg bg-white p-4 shadow-panel sm:p-5;
+}
+
+.panel-heading {
+  @apply mb-4 flex flex-col justify-between gap-4 lg:flex-row lg:items-end;
+}
+
+.legend-row {
+  @apply flex flex-wrap gap-3 text-sm font-bold text-clinical-muted;
+}
+
+.legend-symbol,
+.legend-line,
+.legend-bar {
+  @apply inline-flex items-center gap-2;
+
+  &::before {
+    content: '';
+    @apply block h-3 w-3;
+  }
+}
+
+.legend-symbol.oral::before {
+  @apply rounded-full bg-[#d64545];
+}
+
+.legend-symbol.axillary::before {
+  @apply bg-[#2878d0];
+}
+
+.legend-symbol.rectal::before {
+  @apply bg-[#2f855a];
+  clip-path: polygon(50% 0, 100% 100%, 0 100%);
+}
+
+.legend-line::before {
+  @apply h-0 w-8 border-t-2;
+}
+
+.legend-line.pulse::before {
+  @apply border-clinical-pulse;
+  border-style: dashed;
+}
+
+.legend-line.reference::before {
+  @apply border-clinical-fever;
+  border-style: dashed;
+}
+
+.legend-bar::before {
+  @apply h-4 w-2 rounded-sm bg-[#2878d0];
+}
+
+.chart-wrap {
+  @apply relative w-full overflow-x-auto rounded-lg border border-clinical-line bg-white;
+}
+
+.temperature-svg {
+  @apply block min-w-[760px] w-full;
+}
+
+.temp-zone {
+  text {
+    fill: #68768b;
+    font-size: 12px;
+    font-weight: 800;
+  }
+}
+
+.zone-cool {
+  fill: #ecf6ff;
+}
+
+.zone-normal {
+  fill: #f2fbf5;
+}
+
+.zone-low-fever {
+  fill: #fff7df;
+}
+
+.zone-high-fever {
+  fill: #fff0f0;
+}
+
+.grid-line {
+  stroke: #e4eaf2;
+  stroke-width: 1;
+}
+
+.grid-line.strong {
+  stroke: #c6d0df;
+}
+
+.time-line {
+  stroke: #eef1f5;
+  stroke-width: 1;
+}
+
+.time-line.day-start {
+  stroke: #aebbd0;
+  stroke-width: 1.4;
+}
+
+.reference-line {
+  stroke: #d64545;
+  stroke-dasharray: 6 6;
+  stroke-width: 1.5;
+}
+
+.reference-label {
+  fill: #b93030;
+  font-size: 12px;
+  font-weight: 900;
+}
+
+.vital-line {
+  fill: none;
+  stroke-linejoin: round;
+  stroke-linecap: round;
+  stroke-width: 2.6;
+}
+
+.temp-line {
+  stroke: #9b3d3d;
+}
+
+.pulse-line {
+  stroke: #1f7a8c;
+  stroke-dasharray: 7 7;
+}
+
+.bp-bar {
+  fill: #2878d0;
+  opacity: 0.72;
+}
+
+.chart-point {
+  stroke: #ffffff;
+  stroke-width: 1.7;
+}
+
+.temp-point.oral {
+  fill: #d64545;
+}
+
+.temp-point.axillary {
+  fill: #2878d0;
+}
+
+.temp-point.rectal {
+  fill: #2f855a;
+}
+
+.pulse-point {
+  fill: #1f7a8c;
+}
+
+.event-marker {
+  path {
+    fill: #7d5bd1;
+    stroke: #ffffff;
+    stroke-width: 1.2;
+  }
+
+  text {
+    fill: #5f43a8;
+    font-size: 12px;
+    font-weight: 800;
+    text-anchor: middle;
+  }
+}
+
+.axis {
+  color: #5d6b82;
+  font-size: 12px;
+
+  path,
+  line {
+    stroke: #9aa9bd;
+  }
+}
+
+.axis-title {
+  fill: #172033;
+  font-size: 13px;
+  font-weight: 800;
+}
+
+.time-label,
+.day-label,
+.row-label {
+  fill: #5d6b82;
+  font-size: 12px;
+  font-weight: 700;
+  text-anchor: middle;
+}
+
+.row-label {
+  text-anchor: start;
+}
+
+.hover-target {
+  fill: transparent;
+  outline: none;
+}
+
+.chart-tooltip {
+  @apply pointer-events-none absolute z-10 flex w-56 flex-col gap-1 rounded-lg border border-clinical-line bg-white/95 p-3 text-xs text-clinical-muted shadow-panel backdrop-blur;
+
+  strong {
+    @apply text-sm text-clinical-ink;
+  }
+
+  em {
+    @apply not-italic text-clinical-fever;
+  }
+}
+
+.entry-panel {
+  @apply grid gap-5 xl:grid-cols-[240px_1fr];
+}
+
+.vital-form {
+  @apply grid gap-3 sm:grid-cols-2 lg:grid-cols-4;
+
+  label {
+    @apply grid gap-2 text-sm font-bold text-clinical-muted;
+  }
+
+  input,
+  select {
+    @apply h-11 w-full rounded-lg border border-clinical-line bg-white px-3 text-clinical-ink outline-none transition focus:border-clinical-pulse focus:ring-2 focus:ring-[#1f7a8c]/20;
+  }
+}
+
+.form-actions {
+  @apply flex flex-wrap items-end gap-3 lg:col-span-4;
+}
+
+.summary-grid {
+  @apply grid gap-4 sm:grid-cols-2 xl:grid-cols-5;
+}
+
+.summary-item {
+  @apply min-h-32 rounded-lg border border-clinical-line bg-white p-4 shadow-panel;
+
+  span {
+    @apply block text-xs font-bold text-clinical-muted;
+  }
+
+  strong {
+    @apply mt-3 block text-2xl text-clinical-ink;
+  }
+
+  p {
+    @apply mt-3 text-sm text-clinical-muted;
+  }
+}
+
+.emr-panel {
+  @apply rounded-lg bg-white p-4 shadow-panel sm:p-5;
+}
+
+.emr-toolbar {
+  @apply mb-4 flex flex-col justify-between gap-4 lg:flex-row lg:items-end;
+}
+
+.emr-actions {
+  @apply flex flex-wrap items-center gap-3 text-sm font-bold text-clinical-muted;
+}
+
+.emr-editor {
+  @apply relative rounded-lg border border-clinical-line bg-[#e6edf2] outline-none transition focus-within:border-clinical-pulse focus-within:ring-2 focus-within:ring-[#1f7a8c]/20;
+}
+
+.emr-toast {
+  @apply absolute left-1/2 top-20 z-[60] -translate-x-1/2 rounded-lg bg-clinical-ink px-5 py-3 text-sm font-bold text-white shadow-panel;
+}
+
+.emr-ime-input {
+  @apply absolute left-0 top-0 z-10 h-6 w-2 resize-none overflow-hidden border-0 bg-transparent p-0 opacity-0 outline-none;
+  caret-color: transparent;
+  color: transparent;
+  line-height: 24px;
+  pointer-events: none;
+}
+
+.emr-ruler {
+  @apply border-b border-clinical-line bg-white px-4 py-3 text-sm font-bold text-clinical-muted;
+}
+
+.emr-scroller {
+  @apply max-h-[760px] overflow-auto p-5;
+
+  canvas {
+    @apply mx-auto block cursor-text select-none;
+  }
+}
+
+.emr-context-menu {
+  @apply fixed z-50 grid min-w-48 gap-1 rounded-lg border border-clinical-line bg-white p-2 text-sm shadow-panel;
+
+  button {
+    @apply flex items-center justify-between gap-5 rounded-md px-3 py-2 text-left font-bold text-clinical-ink hover:bg-clinical-surface disabled:cursor-not-allowed disabled:opacity-40;
+  }
+
+  span {
+    @apply text-xs font-normal text-clinical-muted;
+  }
+}
