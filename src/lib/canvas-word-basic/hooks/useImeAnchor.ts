@@ -11,7 +11,7 @@
  * - 键盘快捷键分发。
  * - 文本编辑历史栈。
  */
-import { useRef } from 'react';
+import { useRef, useState } from 'react';
 import { canvasWordLayout } from '../../medical-record/medicalRecordDocument';
 import { findCursorLine, measureLinePrefix, visualOffsetForSourceCursor } from '../layout/canvasTextLayout';
 import type { CompositionEvent, FormEvent, RefObject } from 'react';
@@ -30,6 +30,8 @@ type UseImeAnchorOptions = {
 export function useImeAnchor({ editorRef, canvasRef, inputRef, layout, cursor, commitInput, resetInputValue }: UseImeAnchorOptions) {
   // 中文输入法 composition 期间不要把中间态文本提交进编辑器。
   const composingRef = useRef(false);
+  // React state 只用于切换 textarea 的可见样式，让用户能看到拼音预编辑串。
+  const [isComposingActive, setIsComposingActive] = useState(false);
 
   // The hidden textarea is only an IME anchor; Canvas remains the visual source of truth.
   const syncInputPosition = (nextLayout = layout, nextCursor = cursor) => {
@@ -73,10 +75,12 @@ export function useImeAnchor({ editorRef, canvasRef, inputRef, layout, cursor, c
   // 中文输入法开始组合时，暂停普通 input 提交，等待 compositionEnd 一次性提交最终文本。
   const handleCompositionStart = () => {
     composingRef.current = true;
+    setIsComposingActive(true);
   };
 
   const handleCompositionEnd = (event: CompositionEvent<HTMLTextAreaElement>) => {
     composingRef.current = false;
+    setIsComposingActive(false);
     commitInput(event.data || event.currentTarget.value);
     resetInputValue();
   };
@@ -87,6 +91,7 @@ export function useImeAnchor({ editorRef, canvasRef, inputRef, layout, cursor, c
     handleCompositionStart,
     handleInput,
     isComposing: () => composingRef.current,
+    isComposingActive,
     syncInputPosition,
   };
 }

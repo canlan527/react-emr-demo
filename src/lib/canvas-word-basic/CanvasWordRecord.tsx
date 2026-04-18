@@ -89,7 +89,15 @@ export function CanvasWordRecord({ patient }: CanvasWordRecordProps) {
     },
   });
 
-  const { focusInput, handleCompositionEnd, handleCompositionStart, handleInput, isComposing, syncInputPosition } = useImeAnchor({
+  const {
+    focusInput,
+    handleCompositionEnd,
+    handleCompositionStart,
+    handleInput,
+    isComposing,
+    isComposingActive,
+    syncInputPosition,
+  } = useImeAnchor({
     editorRef,
     canvasRef,
     inputRef,
@@ -351,6 +359,7 @@ export function CanvasWordRecord({ patient }: CanvasWordRecordProps) {
         canvasRef={canvasRef}
         toast={toast}
         contextMenu={contextMenu}
+        isComposing={isComposingActive}
         canUndo={history.past.length > 0}
         canRedo={history.future.length > 0}
         hasSelection={Boolean(normalizeSelection(selection))}

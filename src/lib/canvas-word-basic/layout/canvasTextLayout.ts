@@ -64,6 +64,7 @@ const chineseLineStartPunctuation = new Set(
 const englishLineStartPunctuation = new Set(Array.from(',.!?;:)]}>"\'%'));
 
 const acceptablePunctuationGap = 48;
+const acceptableSpaceGap = 96;
 
 // 判断字符是否属于“不能出现在行首”的标点。中英文分开记录，便于后续扩展不同规则。
 function getPunctuationKind(char: string): PunctuationKind | null {
@@ -157,12 +158,13 @@ function chooseBreakIndex(
     return fallbackIndex;
   }
 
-  if (candidate.kind === 'space') {
-    return candidate.index;
-  }
-
   const candidateLine = paragraph.slice(lineStart, candidate.index);
   const remainingWidth = maxWidth - ctx.measureText(candidateLine).width;
+
+  // 空格离行尾太远时，不应把空格后整段文字都搬到下一行；继续按字符自然截断更接近中文输入体验。
+  if (candidate.kind === 'space') {
+    return remainingWidth <= acceptableSpaceGap ? candidate.index : fallbackIndex;
+  }
 
   // 中文输入时，离当前溢出点很远的旧标点不应把整段新文字搬到下一行。
   return remainingWidth <= acceptablePunctuationGap ? candidate.index : fallbackIndex;

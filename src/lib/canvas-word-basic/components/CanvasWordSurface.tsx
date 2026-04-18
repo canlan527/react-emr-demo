@@ -21,6 +21,7 @@ type CanvasWordSurfaceProps = {
   canvasRef: RefObject<HTMLCanvasElement | null>;
   toast: string;
   contextMenu: ContextMenuState | null;
+  isComposing: boolean;
   canUndo: boolean;
   canRedo: boolean;
   hasSelection: boolean;
@@ -49,6 +50,7 @@ export function CanvasWordSurface({
   canvasRef,
   toast,
   contextMenu,
+  isComposing,
   canUndo,
   canRedo,
   hasSelection,
@@ -74,7 +76,7 @@ export function CanvasWordSurface({
       {toast ? <div className="emr-toast">{toast}</div> : null}
       <textarea
         ref={inputRef}
-        className="emr-ime-input"
+        className={`emr-ime-input${isComposing ? ' is-composing' : ''}`}
         aria-label="电子病历输入代理"
         autoCapitalize="off"
         autoComplete="off"
