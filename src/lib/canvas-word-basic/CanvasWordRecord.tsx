@@ -28,6 +28,7 @@ import {
   visualOffsetForSourceCursor,
 } from './layout/canvasTextLayout';
 import { CanvasWordSurface } from './components/CanvasWordSurface';
+import { insertText, replaceRange } from './editing/textEditing';
 import { renderCanvasWord } from './layout/canvasWordRenderer';
 import { normalizeSelection } from './editing/textSelection';
 import { useImeAnchor } from './hooks/useImeAnchor';
@@ -91,8 +92,10 @@ export function CanvasWordRecord({ patient }: CanvasWordRecordProps) {
 
   const {
     focusInput,
+    compositionText,
     handleCompositionEnd,
     handleCompositionStart,
+    handleCompositionUpdate,
     handleInput,
     isComposing,
     isComposingActive,
@@ -106,6 +109,16 @@ export function CanvasWordRecord({ patient }: CanvasWordRecordProps) {
     commitInput,
     resetInputValue,
   });
+
+  const compositionRange = normalizeSelection(selection);
+  const previewText = compositionText
+    ? compositionRange
+      ? replaceRange(text, compositionRange.start, compositionRange.end, compositionText)
+      : insertText(text, cursor, compositionText)
+    : text;
+  const previewCursor = compositionText
+    ? (compositionRange ? compositionRange.start : cursor) + compositionText.length
+    : cursor;
 
   // 将鼠标事件转换成文档光标位置，并附带视觉行信息供选区使用。
   const getCanvasHit = (event: MouseEvent<HTMLCanvasElement>, anchor?: number, mode: CursorHitMode = 'caret') => {
@@ -171,14 +184,14 @@ export function CanvasWordRecord({ patient }: CanvasWordRecordProps) {
 
   // 核心绘制 effect：任何文本、光标或选区变化，都重新排版并重绘整张 Canvas。
   useEffect(() => {
-    const result = renderCanvasWord({ canvas: canvasRef.current, text, cursor, selection });
+    const result = renderCanvasWord({ canvas: canvasRef.current, text: previewText, cursor: previewCursor, selection: compositionText ? null : selection });
     if (!result) {
       return;
     }
 
     setLayout(result.layout);
-    syncInputPosition(result.layout, cursor);
-  }, [cursor, selection, text]);
+    syncInputPosition(result.layout, previewCursor);
+  }, [compositionText, cursor, previewCursor, previewText, selection, text]);
 
   // 滚动或窗口尺寸变化后，Canvas 视觉内容没有变，但隐藏 textarea 的屏幕坐标需要跟着更新。
   useEffect(() => {
@@ -366,6 +379,7 @@ export function CanvasWordRecord({ patient }: CanvasWordRecordProps) {
         onEditorClick={focusInput}
         onCompositionStart={handleCompositionStart}
         onCompositionEnd={handleCompositionEnd}
+        onCompositionUpdate={handleCompositionUpdate}
         onInput={handleInput}
         onKeyDown={handleKeyDown}
         onCanvasContextMenu={handleContextMenu}

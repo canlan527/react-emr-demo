@@ -429,8 +429,8 @@ h2 {
 }
 
 .emr-ime-input.is-composing {
-  @apply opacity-100;
-  color: #2d3748;
+  @apply opacity-0;
+  color: transparent;
 }
 
 .emr-ruler {
@@ -455,4 +455,55 @@ h2 {
   span {
     @apply text-xs font-normal text-clinical-muted;
   }
+}
+
+.rich-canvas-word {
+  @apply rounded-lg bg-white p-4 shadow-panel sm:p-5;
+}
+
+.rich-canvas-heading {
+  @apply mb-4 flex flex-col justify-between gap-3 lg:flex-row lg:items-end;
+
+  span {
+    @apply inline-flex w-fit rounded-md border border-clinical-line bg-clinical-surface px-3 py-2 text-sm font-bold text-clinical-muted;
+  }
+}
+
+.rich-canvas-toolbar {
+  @apply overflow-hidden rounded-t-lg border border-clinical-line bg-white;
+
+  canvas {
+    @apply block h-[52px] w-full;
+  }
+}
+
+.rich-canvas-surface {
+  @apply rounded-b-lg border-x border-b border-clinical-line bg-[#dfe8ee];
+}
+
+.rich-canvas-scroller {
+  @apply relative max-h-[760px] overflow-auto p-5;
+
+  canvas {
+    @apply mx-auto block;
+
+    &:focus {
+      @apply outline-none;
+    }
+  }
+}
+
+.rich-canvas-ime-input {
+  @apply absolute z-10 h-7 w-80 resize-none overflow-hidden border-0 bg-transparent p-0 opacity-0 outline-none;
+  caret-color: transparent;
+  color: transparent;
+  font-family: "PingFang SC", "Microsoft YaHei", Arial, sans-serif;
+  font-size: 16px;
+  line-height: 28px;
+  pointer-events: none;
+}
+
+.rich-canvas-ime-input.is-composing {
+  @apply opacity-0;
+  color: transparent;
 }

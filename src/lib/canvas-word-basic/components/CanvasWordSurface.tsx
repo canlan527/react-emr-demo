@@ -28,6 +28,7 @@ type CanvasWordSurfaceProps = {
   onEditorClick: () => void;
   onCompositionStart: () => void;
   onCompositionEnd: (event: CompositionEvent<HTMLTextAreaElement>) => void;
+  onCompositionUpdate: (event: CompositionEvent<HTMLTextAreaElement>) => void;
   onInput: (event: FormEvent<HTMLTextAreaElement>) => void;
   onKeyDown: (event: KeyboardEvent<HTMLTextAreaElement>) => void;
   onCanvasContextMenu: (event: MouseEvent<HTMLCanvasElement>) => void;
@@ -57,6 +58,7 @@ export function CanvasWordSurface({
   onEditorClick,
   onCompositionStart,
   onCompositionEnd,
+  onCompositionUpdate,
   onInput,
   onKeyDown,
   onCanvasContextMenu,
@@ -84,6 +86,7 @@ export function CanvasWordSurface({
         spellCheck={false}
         onCompositionEnd={onCompositionEnd}
         onCompositionStart={onCompositionStart}
+        onCompositionUpdate={onCompositionUpdate}
         onInput={onInput}
         onKeyDown={onKeyDown}
       />

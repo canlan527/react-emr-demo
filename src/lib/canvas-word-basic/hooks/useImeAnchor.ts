@@ -30,8 +30,9 @@ type UseImeAnchorOptions = {
 export function useImeAnchor({ editorRef, canvasRef, inputRef, layout, cursor, commitInput, resetInputValue }: UseImeAnchorOptions) {
   // 中文输入法 composition 期间不要把中间态文本提交进编辑器。
   const composingRef = useRef(false);
-  // React state 只用于切换 textarea 的可见样式，让用户能看到拼音预编辑串。
+  // React state 记录 composition 状态和预编辑文本；预编辑文本交给 Canvas 做内联预览。
   const [isComposingActive, setIsComposingActive] = useState(false);
+  const [compositionText, setCompositionText] = useState('');
 
   // The hidden textarea is only an IME anchor; Canvas remains the visual source of truth.
   const syncInputPosition = (nextLayout = layout, nextCursor = cursor) => {
@@ -76,12 +77,18 @@ export function useImeAnchor({ editorRef, canvasRef, inputRef, layout, cursor, c
   const handleCompositionStart = () => {
     composingRef.current = true;
     setIsComposingActive(true);
+    setCompositionText('');
+  };
+
+  const handleCompositionUpdate = (event: CompositionEvent<HTMLTextAreaElement>) => {
+    setCompositionText(event.data || event.currentTarget.value);
   };
 
   const handleCompositionEnd = (event: CompositionEvent<HTMLTextAreaElement>) => {
     composingRef.current = false;
     setIsComposingActive(false);
     commitInput(event.data || event.currentTarget.value);
+    setCompositionText('');
     resetInputValue();
   };
 
@@ -89,7 +96,9 @@ export function useImeAnchor({ editorRef, canvasRef, inputRef, layout, cursor, c
     focusInput,
     handleCompositionEnd,
     handleCompositionStart,
+    handleCompositionUpdate,
     handleInput,
+    compositionText,
     isComposing: () => composingRef.current,
     isComposingActive,
     syncInputPosition,
