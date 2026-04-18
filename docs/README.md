@@ -16,8 +16,10 @@
   - 记录 Canvas 编辑器内部模块、排版算法、输入法代理、选区和剪贴板设计。
 - [06-known-issues-and-next-steps.md](./06-known-issues-and-next-steps.md)
   - 记录当前遗留问题，尤其是选区高亮边界与光标/复制范围不一致的问题。
-- [07-rich-text-toolbar-plan.md](./07-rich-text-toolbar-plan.md)
-  - 记录电子病历富文本工具栏范围、模型升级、交互规则、一期/二期边界。
+- [07-canvas-word-version-roadmap.md](./07-canvas-word-version-roadmap.md)
+  - 记录 Canvas Word 从 v0 基础版到 rich-canvas-word v1/v2，再到 medical-record 业务包装层的版本路线、富文本模型和拆分步骤。
+- [08-canvas-word-record-refactor-plan.md](./08-canvas-word-record-refactor-plan.md)
+  - 记录 v0 主组件 `CanvasWordRecord.tsx` 的拆分阶段、目标文件和每阶段验收清单。
 
 ## 当前项目定位
 
@@ -45,4 +47,5 @@
 2. 再读 [01-product-requirements.md](./01-product-requirements.md)。
 3. 若要改架构，读 [02-technical-architecture.md](./02-technical-architecture.md)。
 4. 若要继续修 Canvas 编辑器，重点读 [05-canvas-editor-architecture.md](./05-canvas-editor-architecture.md) 和 [06-known-issues-and-next-steps.md](./06-known-issues-and-next-steps.md)。
-5. 若要做富文本工具栏，先读 [07-rich-text-toolbar-plan.md](./07-rich-text-toolbar-plan.md)。
+5. 若要做富文本工具栏、规划 Canvas Word 版本演进或拆分目录，读 [07-canvas-word-version-roadmap.md](./07-canvas-word-version-roadmap.md)。
+6. 若要拆分 `CanvasWordRecord.tsx`，按 [08-canvas-word-record-refactor-plan.md](./08-canvas-word-record-refactor-plan.md) 分阶段推进。

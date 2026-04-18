@@ -16,7 +16,7 @@
 
 ## 文档模型
 
-文件：`src/lib/medicalRecordDocument.ts`
+文件：`src/lib/medical-record/medicalRecordDocument.ts`
 
 核心类型：
 

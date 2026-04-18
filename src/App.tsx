@@ -1,6 +1,6 @@
 import { FormEvent, useEffect, useMemo, useState } from 'react';
 import { TemperatureChart } from './components/TemperatureChart';
-import { CanvasWordRecord } from './lib/CanvasWordRecord';
+import { CanvasWordRecord } from './lib/canvas-word-basic/CanvasWordRecord';
 import {
   createRecord,
   createSampleRecords,

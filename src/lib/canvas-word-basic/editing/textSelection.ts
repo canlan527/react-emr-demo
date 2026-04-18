@@ -1,6 +1,18 @@
-import { canvasWordLayout } from './medicalRecordDocument';
-import { measureLinePrefix, visualOffsetForSourceCursor } from './canvasTextLayout';
-import type { LayoutLine } from './canvasTextLayout';
+/**
+ * Canvas Word 的选区工具模块。
+ *
+ * 职责：
+ * - 归一化 anchor/focus 选区。
+ * - 根据 layout 视觉行生成 Canvas 选区高亮矩形。
+ *
+ * 不直接负责：
+ * - 鼠标事件处理。
+ * - 修改 selection state。
+ * - 复制/剪切的文本读取。
+ */
+import { canvasWordLayout } from '../../medical-record/medicalRecordDocument';
+import { measureLinePrefix, visualOffsetForSourceCursor } from '../layout/canvasTextLayout';
+import type { LayoutLine } from '../layout/canvasTextLayout';
 
 export type TextSelection = {
   anchor: number;

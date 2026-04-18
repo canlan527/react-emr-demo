@@ -79,7 +79,7 @@
 
 ### 文档模型
 
-需要有初期文档模型和数据结构，当前在 `src/lib/medicalRecordDocument.ts` 中实现：
+需要有初期文档模型和数据结构，当前在 `src/lib/medical-record/medicalRecordDocument.ts` 中实现：
 
 - `MedicalRecordDocument`
 - `MedicalRecordBlock`

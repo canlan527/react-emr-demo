@@ -1,4 +1,4 @@
-import type { PatientInfo } from '../data/vitals';
+import type { PatientInfo } from '../../data/vitals';
 
 export type MedicalRecordBlock =
   | {
