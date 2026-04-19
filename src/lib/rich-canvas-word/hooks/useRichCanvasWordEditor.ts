@@ -16,6 +16,7 @@ import type {
 const toastDuration = 1600;
 const zoomLevels = [0.75, 1, 1.25, 1.5];
 
+// 创建文档首次打开时的默认光标。当前策略是落到第一段第一个 run 的开头。
 function getInitialRichTextPosition(document: RichTextDocument): RichTextPosition | null {
   const firstBlock = document.blocks[0];
   const firstRun = firstBlock?.runs[0];
@@ -30,8 +31,10 @@ function getInitialRichTextPosition(document: RichTextDocument): RichTextPositio
   };
 }
 
-// Central editor state and command hook for rich-canvas-word v1.
-// The presentational Record component should only wire toolbar + surface together.
+// rich-canvas-word 的 editor 聚合 hook。
+//
+// 这里持有运行时状态，并把 history、format、clipboard、text commands 等子 hook 组装起来。
+// 具体编辑算法尽量下沉到 editing/layout 模块，方便后续把这个 hook 包装成受控组件。
 export function useRichCanvasWordEditor() {
   const [document, setDocument] = useState<RichTextDocument>(sampleRichTextDocument);
   const [cursor, setCursor] = useState<RichTextPosition | null>(() => getInitialRichTextPosition(sampleRichTextDocument));
@@ -77,6 +80,7 @@ export function useRichCanvasWordEditor() {
   });
 
   const handleToolbarCommand = (command: ToolbarCommand) => {
+    // 工具栏在 canvas 上，点击后需要主动请求 textarea 重新聚焦，保证继续键盘输入。
     setFocusRequest((value) => value + 1);
 
     if (command === 'undo') {

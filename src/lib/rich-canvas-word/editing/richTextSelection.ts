@@ -2,6 +2,12 @@ import type { RichTextDocument, RichTextPosition, RichTextSelection } from '../r
 import { clampOffset, compareRichTextPositions, findBlockAndRun, isSameRichTextPosition } from './richTextPosition';
 import { createRunId, type RichTextEditResult } from './richTextNormalization';
 
+// selection helper 只处理“选区范围”语义：
+// - anchor/focus -> start/end
+// - 选区纯文本提取
+// - 删除选区并返回合并后的 document/cursor
+
+// 把有方向的 anchor/focus 归一化成按 document 顺序排列的 start/end。
 export function normalizeRichTextSelection(document: RichTextDocument, selection: RichTextSelection | null) {
   if (!selection || isSameRichTextPosition(selection.anchor, selection.focus)) {
     return null;
@@ -12,6 +18,7 @@ export function normalizeRichTextSelection(document: RichTextDocument, selection
     : { start: selection.focus, end: selection.anchor };
 }
 
+// 提取选区纯文本。跨 block 时用换行连接，供系统剪贴板 text/plain 使用。
 export function extractRichTextSelectionPlainText(document: RichTextDocument, selection: RichTextSelection | null) {
   const range = normalizeRichTextSelection(document, selection);
   if (!range) {
@@ -47,6 +54,9 @@ export function extractRichTextSelectionPlainText(document: RichTextDocument, se
     .join('\n');
 }
 
+// 删除选区：
+// - 同 block 内删除选中的 run 片段。
+// - 跨 block 删除时，把 end block 的剩余内容接到 start block 后面，模拟常见富文本编辑器语义。
 export function deleteRichTextSelection(
   document: RichTextDocument,
   selection: RichTextSelection | null,

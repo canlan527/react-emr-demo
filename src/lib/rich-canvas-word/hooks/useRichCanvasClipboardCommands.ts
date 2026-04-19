@@ -9,6 +9,13 @@ import {
 import { parseHtmlToRichTextSlice, readClipboardHtml, writeRichTextClipboard } from '../editing/richTextClipboard';
 import type { RichTextClipboardSlice, RichTextDocument, RichTextPosition, RichTextSelection } from '../richTypes';
 
+// 剪贴板命令 hook。
+//
+// 这里负责“选择哪种粘贴来源”：
+// 1. 内部 richClipboard 与 text/plain 匹配时，优先粘贴内部 slice。
+// 2. 否则尝试解析系统 text/html。
+// 3. 最后降级为 text/plain 普通文本粘贴。
+
 type UseRichCanvasClipboardCommandsOptions = {
   commitEdit: (nextDocument: RichTextDocument, nextCursor: RichTextPosition | null, nextSelection?: RichTextSelection | null) => void;
   cursor: RichTextPosition | null;
@@ -32,6 +39,7 @@ export function useRichCanvasClipboardCommands({
   setRichClipboard,
   setToast,
 }: UseRichCanvasClipboardCommandsOptions) {
+  // 复制：同时保存内部 slice，并写入系统 text/html + text/plain。
   const copySelection = async () => {
     const value = extractRichTextSelectionPlainText(document, selection);
     if (!value) {
@@ -44,6 +52,7 @@ export function useRichCanvasClipboardCommands({
     setToast('已复制到剪切板，包含富文本格式');
   };
 
+  // 剪切：复制逻辑之后删除选区，并把删除结果提交进 history。
   const cutSelection = async () => {
     const value = extractRichTextSelectionPlainText(document, selection);
     if (!value) {
@@ -58,6 +67,7 @@ export function useRichCanvasClipboardCommands({
     setToast('已剪切到剪切板，包含富文本格式');
   };
 
+  // 粘贴：优先保留富文本格式；无法解析时保证纯文本可用。
   const pasteClipboard = async () => {
     const value = await navigator.clipboard.readText();
     const html = await readClipboardHtml();

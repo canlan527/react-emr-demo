@@ -11,6 +11,10 @@ import {
 } from './richTextNormalization';
 import { normalizeRichTextSelection } from './richTextSelection';
 
+// 格式命令负责 run marks 和 block align，不处理键盘/工具栏状态。
+// React hook 会根据用户动作调用这里的纯函数，然后把结果提交到 history。
+
+// 读取当前位置的有效 marks。标题 block 默认带 heading 样式，再叠加 run marks。
 export function getRichTextMarksAtPosition(document: RichTextDocument, position: RichTextPosition | null): RichTextMarks {
   const { block, run } = findBlockAndRun(document, position);
   if (!run) {
@@ -23,11 +27,14 @@ export function getRichTextMarksAtPosition(document: RichTextDocument, position:
   };
 }
 
+// 段落对齐是 block 级属性，因此只需要找到 position 所在 block。
 export function getRichTextAlignAtPosition(document: RichTextDocument, position: RichTextPosition | null): RichTextAlign {
   const { block } = findBlockAndRun(document, position);
   return block?.align ?? 'left';
 }
 
+// 对选区应用 run 级格式：
+// 先按选区边界拆 run，只更新中间被选中的片段，再归一化并修复 selection/cursor。
 export function applyRichTextMarksToSelection(
   document: RichTextDocument,
   selection: RichTextSelection | null,
@@ -102,6 +109,7 @@ export function applyRichTextMarksToSelection(
   };
 }
 
+// 对齐是 block 级格式。选区跨过哪些 block，就修改哪些 block；无选区时只改 cursor 所在 block。
 export function applyRichTextAlignToSelection(
   document: RichTextDocument,
   selection: RichTextSelection | null,
@@ -131,6 +139,8 @@ export function applyRichTextAlignToSelection(
   return { ...document, blocks };
 }
 
+// 清除当前空 run 的格式。用于“回车后想恢复默认纯文本”的场景。
+// 只处理空 run，避免用户误把已有文本样式清空。
 export function clearCurrentRichTextFormatting(
   document: RichTextDocument,
   position: RichTextPosition | null,

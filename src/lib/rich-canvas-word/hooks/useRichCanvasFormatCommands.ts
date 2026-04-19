@@ -18,11 +18,19 @@ import type {
   RichTextSelection,
 } from '../richTypes';
 
+// 工具栏/格式命令 hook。
+//
+// 这里同时负责：
+// - 根据当前 cursor/selection 推导 toolbar 的 active/disabled/label/color。
+// - 无选区时更新 activeMarks，表示“后续输入格式”。
+// - 有选区时调用 editing 纯函数修改选区 run marks。
+
 function getNextOptionValue<T>(options: Array<{ value: T | undefined }>, currentValue: T | undefined) {
   const currentIndex = options.findIndex((item) => item.value === currentValue);
   return options[(currentIndex + 1) % options.length]?.value;
 }
 
+// 字号按钮采用循环切换，不弹出下拉面板。
 function getNextFontSize(currentFontSize: number | undefined) {
   const currentIndex = richFontSizeOptions.findIndex((item) => item === currentFontSize);
   return richFontSizeOptions[(currentIndex + 1) % richFontSizeOptions.length] ?? 16;
@@ -53,6 +61,8 @@ export function useRichCanvasFormatCommands({
   setToast,
   zoom,
 }: UseRichCanvasFormatCommandsOptions) {
+  // currentMarks 是工具栏显示的样式来源。
+  // 有选区时读取选区起点样式；无选区时读取 cursor 样式并叠加 activeMarks。
   const selectionRange = useMemo(() => normalizeRichTextSelection(document, selection), [document, selection]);
   const currentPosition = selectionRange?.start ?? cursor;
   const currentMarks = useMemo(
@@ -61,6 +71,7 @@ export function useRichCanvasFormatCommands({
   );
   const currentAlign = useMemo(() => getRichTextAlignAtPosition(document, currentPosition), [currentPosition, document]);
 
+  // 判断按钮是否处于激活状态。对循环型命令来说，有值即 active。
   const hasActiveMark = (command: RichTextFormatCommand) => {
     if (command === 'bold') {
       return Boolean(currentMarks.bold);
@@ -85,6 +96,7 @@ export function useRichCanvasFormatCommands({
     return false;
   };
 
+  // 将静态 toolbar config 与当前编辑状态合并，生成 Canvas toolbar 可直接绘制的数据。
   const toolbarItems = useMemo(
     () =>
       richToolbarItems.map((item) => {
@@ -127,6 +139,7 @@ export function useRichCanvasFormatCommands({
     [canRedo, canUndo, currentAlign, currentMarks, zoom],
   );
 
+  // 无选区格式命令更新 activeMarks，影响后续输入，而不是立刻修改 document。
   const updateActiveMark = (command: RichTextFormatCommand) => {
     setActiveMarks((current) => {
       const next = { ...current };
@@ -159,6 +172,7 @@ export function useRichCanvasFormatCommands({
     });
   };
 
+  // 有选区时，把格式命令转换为 run marks updater。
   const getFormatUpdater = (command: RichTextFormatCommand) => (marks: RichTextMarks): RichTextMarks => {
     if (command === 'clearFormat') {
       return {};
@@ -183,6 +197,7 @@ export function useRichCanvasFormatCommands({
     return { ...marks, backgroundColor: getNextOptionValue(richHighlightColorOptions, currentMarks.backgroundColor ?? marks.backgroundColor) };
   };
 
+  // 工具栏反馈文案区分“选区”和“后续输入”，帮助用户理解无选区格式开关。
   const getFormatToast = (command: RichTextFormatCommand, hasSelection: boolean) => {
     const target = hasSelection ? '选区' : '后续输入';
     if (command === 'bold') {
@@ -208,6 +223,7 @@ export function useRichCanvasFormatCommands({
     return `已清除${target}格式`;
   };
 
+  // 格式命令主入口：无选区改 activeMarks，有选区改 document。
   const applyFormatCommand = (command: RichTextFormatCommand) => {
     if (!selection) {
       if (command === 'clearFormat') {
@@ -235,6 +251,7 @@ export function useRichCanvasFormatCommands({
     setToast(getFormatToast(command, true));
   };
 
+  // 对齐是 block 级命令，不进入 activeMarks。
   const applyAlignCommand = (align: RichTextAlign) => {
     const nextDocument = applyRichTextAlignToSelection(document, selection, cursor, align);
     commitEdit(nextDocument, cursor, selection);

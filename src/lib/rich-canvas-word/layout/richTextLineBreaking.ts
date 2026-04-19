@@ -11,6 +11,9 @@ const defaultFontFamily = '"PingFang SC", "Microsoft YaHei", Arial, sans-serif';
 const acceptablePunctuationGap = 48;
 const acceptableSpaceGap = 96;
 
+// line breaking 负责把 document 排成视觉行和页面。
+// 这里是唯一可以访问 Canvas measureText 的排版层，renderer 只消费 layout 结果。
+
 type BreakKind = 'space' | 'punctuation';
 
 // 字符级单元是 v1 排版的关键中间层。先拆成字符，才能按真实 Canvas 宽度换行；
@@ -42,6 +45,7 @@ export const richCanvasWordLayout = {
   lineHeightRatio: 1.65,
 };
 
+// 避头标点：换行时尽量不要让这些标点出现在行首。
 const chineseLineStartPunctuation = new Set(Array.from('，。！？；：、）】》」』〕〉〗〙〛”’…—'));
 const englishLineStartPunctuation = new Set(Array.from(',.!?;:)]}>"\'%'));
 
@@ -69,6 +73,7 @@ function getFontSize(block: RichTextBlock, marks: RichTextMarks) {
   return marks.fontSize ?? (block.type === 'heading' ? richCanvasWordLayout.headingFontSize : richCanvasWordLayout.defaultFontSize);
 }
 
+// 统一生成 Canvas font 字符串，renderer 和 layout 必须共享同一套规则。
 export function createRichFont(block: RichTextBlock, marks: RichTextMarks) {
   const weight = marks.bold || block.type === 'heading' ? 700 : 400;
   const size = getFontSize(block, marks);
@@ -80,6 +85,7 @@ function getRunHeight(block: RichTextBlock, marks: RichTextMarks) {
   return Math.ceil(getFontSize(block, marks) * richCanvasWordLayout.lineHeightRatio);
 }
 
+// 将 run 拆成可测量的字符单元。offset 仍使用原 run.text 的 JS 字符串位置。
 function createCharUnits(ctx: CanvasRenderingContext2D, block: RichTextBlock) {
   const units: RichCharUnit[] = [];
 
@@ -113,6 +119,8 @@ function sumWidth(units: RichCharUnit[], start: number, end: number) {
   return width;
 }
 
+// 在溢出时选择更自然的断行点：
+// 优先使用接近行尾的空格/标点候选，否则按字符强制断开。
 function chooseBreakIndex(
   units: RichCharUnit[],
   lineStart: number,
@@ -139,6 +147,7 @@ function chooseBreakIndex(
   return remainingWidth <= acceptablePunctuationGap ? candidate.index : Math.min(fallbackIndex, units.length);
 }
 
+// 把字符单元合并回 fragment。同 run、同 font、连续 offset 的字符可以合并绘制。
 function unitsToFragments(units: RichCharUnit[], y: number): RichLayoutFragment[] {
   const fragments: RichLayoutFragment[] = [];
 
@@ -170,6 +179,7 @@ function unitsToFragments(units: RichCharUnit[], y: number): RichLayoutFragment[
   return fragments;
 }
 
+// 对一条视觉行做 left/center/right 对齐，并写回 fragment.x。
 function alignLine(line: RichLayoutLine, contentWidth: number) {
   const lineWidth = line.fragments.reduce((total, fragment) => total + fragment.width, 0);
   const offset = line.align === 'center' ? (contentWidth - lineWidth) / 2 : line.align === 'right' ? contentWidth - lineWidth : 0;
@@ -182,6 +192,7 @@ function alignLine(line: RichLayoutLine, contentWidth: number) {
   });
 }
 
+// 将一个 block 的字符单元切成多条视觉行。
 function createBlockLineUnits(units: RichCharUnit[], contentWidth: number) {
   const lines: RichCharUnit[][] = [];
   let lineStart = 0;
@@ -225,6 +236,7 @@ function createBlockLineUnits(units: RichCharUnit[], contentWidth: number) {
   return lines.length > 0 ? lines : [[]];
 }
 
+// 主排版入口：负责分页、段落间距、行高、baseline、对齐和空行占位 fragment。
 export function layoutRichTextDocument(ctx: CanvasRenderingContext2D, document: RichTextDocument) {
   const { marginX, marginY, pageHeight, pageGap, pageWidth } = richCanvasWordLayout;
   const contentWidth = pageWidth - marginX * 2;

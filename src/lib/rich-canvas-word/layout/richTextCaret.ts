@@ -12,6 +12,9 @@ import { hitTestRichTextPosition, richTextHitTestingInternals } from './richText
 
 const { createPosition, measureFragmentPrefix } = richTextHitTestingInternals;
 
+// caret 模块负责所有“position <-> 光标/选区几何”的逻辑。
+// 横向移动基于 document 顺序，纵向移动基于 layout 视觉行。
+
 function getOrderedRuns(document: RichTextDocument) {
   return document.blocks.flatMap((block) => block.runs.map((run) => ({ block, run })));
 }
@@ -28,6 +31,7 @@ function getTextBoundaries(text: string) {
   return boundaries;
 }
 
+// 左右方向键移动：按 Unicode 字符边界移动，跨 run 时跳过视觉上重合的边界。
 export function moveRichTextPosition(
   document: RichTextDocument,
   position: RichTextPosition | null,
@@ -80,6 +84,7 @@ export function moveRichTextPosition(
   return { blockId: next.block.id, runId: next.run.id, offset: nextRunOffset };
 }
 
+// 判断 position 是否落在某个 fragment 覆盖的 run 区间内。
 function isPositionInFragment(position: RichTextPosition, fragment: RichLayoutFragment) {
   return position.runId === fragment.runId && position.offset >= fragment.startOffset && position.offset <= fragment.endOffset;
 }
@@ -100,6 +105,7 @@ function getCursorXInLine(ctx: CanvasRenderingContext2D, line: RichLayoutLine, p
   return line.x;
 }
 
+// 获取当前视觉行的行首或行尾 position，用于 Home/End。
 export function getRichLineBoundaryPosition(
   layout: RichTextLayoutResult,
   position: RichTextPosition | null,
@@ -115,6 +121,7 @@ export function getRichLineBoundaryPosition(
   return createPosition(fragment, boundary === 'start' ? fragment.startOffset : fragment.endOffset);
 }
 
+// 上下方向键：保持当前 x 坐标，在上一/下一视觉行执行一次 hit test。
 export function moveRichTextPositionVertically(
   ctx: CanvasRenderingContext2D,
   layout: RichTextLayoutResult,
@@ -137,6 +144,7 @@ export function moveRichTextPositionVertically(
   return hitTestRichTextPosition(ctx, layout, targetX, targetLine.y + targetLine.height / 2);
 }
 
+// 根据 position 生成光标矩形。找不到精确 fragment 时，会退到同 run 最近 fragment，避免光标消失。
 export function getRichCursorRect(
   ctx: CanvasRenderingContext2D,
   layout: RichTextLayoutResult,
@@ -196,6 +204,7 @@ export function getRichCursorRect(
   return null;
 }
 
+// 根据 selection 生成多段矩形。矩形只用于绘制，高层复制/删除仍使用 source selection。
 export function getRichSelectionRects(
   ctx: CanvasRenderingContext2D,
   layout: RichTextLayoutResult,

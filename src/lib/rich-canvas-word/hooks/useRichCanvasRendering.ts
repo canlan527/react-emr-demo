@@ -14,8 +14,12 @@ type UseRichCanvasRenderingInput = {
   zoom: number;
 };
 
-// Rendering/IME anchor hook for the document surface.
-// It owns the canvas and textarea refs plus the latest layout produced by renderer.
+// 正文渲染和 IME 锚点 hook。
+//
+// 它拥有 canvas ref、textarea ref 和最新 layout：
+// - document/cursor/selection/zoom 变化时重绘 canvas。
+// - compositionText 存在时生成临时 preview document，用于中文输入过程中的内联预览。
+// - layout 更新后根据 cursor rect 定位透明 textarea，让系统 IME 候选框跟随光标。
 export function useRichCanvasRendering({
   compositionText,
   cursor,
@@ -30,13 +34,14 @@ export function useRichCanvasRendering({
   const inputRef = externalInputRef ?? ownedInputRef;
   const [layout, setLayout] = useState<RichTextLayoutResult | null>(null);
 
+  // textarea 是输入代理，聚焦它等于让 Canvas 编辑器进入可输入状态。
   const focusInput = () => {
     inputRef.current?.focus({ preventScroll: true });
   };
 
   useEffect(() => {
-    // During IME composition, render an inline preview document. The textarea stays
-    // transparent and only provides browser IME/candidate-window anchoring.
+    // composition 期间不直接提交 document，而是先绘制预览。
+    // 如果有选区，预览时先删除选区再插入 compositionText，和最终提交语义保持一致。
     const selectionPreview = compositionText && selection ? deleteRichTextSelection(document, selection) : null;
     const preview = compositionText
       ? insertTextAtRichPosition(selectionPreview?.document ?? document, selectionPreview?.cursor ?? cursor, compositionText)

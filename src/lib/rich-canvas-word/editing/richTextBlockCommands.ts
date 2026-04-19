@@ -2,6 +2,12 @@ import type { RichTextBlock, RichTextDocument, RichTextPosition, RichTextRun } f
 import { clampOffset, findBlockAndRun, getOrderedRuns, getTextBoundaries, updateRunText } from './richTextPosition';
 import { createBlockId, createEmptyRun, createRunId, type RichTextEditResult } from './richTextNormalization';
 
+// block command 负责段落边界处的编辑行为：
+// - Backspace 在段首合并上一段。
+// - Delete 在段尾合并下一段。
+// - Enter 把当前 block 拆成两个 block。
+// 普通字符级删除仍按 run 的 Unicode 字符边界处理。
+
 function findLastTextRun(block: RichTextDocument['blocks'][number]) {
   return [...block.runs].reverse().find((run) => run.text.length > 0) ?? null;
 }
@@ -82,6 +88,7 @@ function getDeleteMergeCursor(
   return { blockId: currentBlock.id, runId: nextRun.id, offset: 0 };
 }
 
+// Backspace：光标在 block 开头时合并上一段，否则删除前一个字符。
 export function deleteBeforeRichTextPosition(
   document: RichTextDocument,
   position: RichTextPosition | null,
@@ -148,6 +155,7 @@ export function deleteBeforeRichTextPosition(
   };
 }
 
+// Delete：光标在 block 末尾时合并下一段，否则删除后一个字符。
 export function deleteAfterRichTextPosition(
   document: RichTextDocument,
   position: RichTextPosition | null,
@@ -219,6 +227,8 @@ export function deleteAfterRichTextPosition(
   };
 }
 
+// Enter：按 cursor 把当前 block 拆成 before/after 两段。
+// 如果光标后没有内容，新段落会恢复 paragraph/left/空 marks，避免无限继承标题或特殊对齐。
 export function splitBlockAtRichTextPosition(
   document: RichTextDocument,
   position: RichTextPosition | null,

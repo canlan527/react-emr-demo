@@ -19,10 +19,16 @@ import {
 } from './richTextNormalization';
 import { normalizeRichTextSelection } from './richTextSelection';
 
+// 内部富文本剪贴板 slice 处理：
+// - copy/cut 时从选区提取 block/run/marks。
+// - paste 时把 slice 克隆进目标位置并重新生成 id。
+// - 这里只处理内部结构，不直接访问浏览器 Clipboard API。
+
 export type RichTextPasteResult = RichTextEditResult & {
   selection: RichTextSelection | null;
 };
 
+// 把内部 slice 降级为纯文本，用于 text/plain 和内部粘贴匹配。
 export function richTextSliceToPlainText(slice: RichTextClipboardSlice | null) {
   if (!slice) {
     return '';
@@ -31,6 +37,7 @@ export function richTextSliceToPlainText(slice: RichTextClipboardSlice | null) {
   return slice.blocks.map((block) => block.runs.map((run) => run.text).join('')).join('\n');
 }
 
+// 从当前 document 的选区中截取富文本 slice，保留 block/run/marks。
 export function extractRichTextSelectionSlice(
   document: RichTextDocument,
   selection: RichTextSelection | null,
@@ -84,6 +91,7 @@ function cloneBlock(block: RichTextBlock, runs: RichTextRun[]): RichTextBlock {
   };
 }
 
+// 将富文本 slice 插入指定位置。多 block slice 会拆分当前 block，并把前后内容接到首尾 block。
 export function insertRichTextSliceAtPosition(
   document: RichTextDocument,
   position: RichTextPosition | null,

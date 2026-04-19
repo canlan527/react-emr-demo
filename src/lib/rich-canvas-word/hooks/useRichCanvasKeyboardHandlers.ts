@@ -17,6 +17,13 @@ import type {
   RichTextSelection,
 } from '../richTypes';
 
+// textarea 键盘事件桥接。
+//
+// 这个 hook 只把浏览器键盘事件转换为 editor 命令：
+// - 快捷键：撤销、重做、全选、复制、剪切、粘贴、格式。
+// - 导航键：左右/上下/Home/End。
+// - 编辑键：Backspace/Delete/Enter。
+
 type UseRichCanvasKeyboardHandlersOptions = {
   canvasRef: RefObject<HTMLCanvasElement | null>;
   composingRef: RefObject<boolean>;
@@ -62,6 +69,8 @@ export function useRichCanvasKeyboardHandlers({
   onUndo,
   selection,
 }: UseRichCanvasKeyboardHandlersOptions) {
+  // 统一处理光标移动和 Shift 扩展选区。
+  // latest refs 用于避免 React state 尚未刷新时连续键盘事件读到旧 cursor/selection。
   const moveCursor = (nextCursor: RichTextPosition | null, shouldExtendSelection: boolean) => {
     if (!nextCursor) {
       return;
@@ -81,6 +90,7 @@ export function useRichCanvasKeyboardHandlers({
     onCursorChange(nextCursor);
   };
 
+  // 所有键盘入口都在 textarea 上，而不是 canvas 上，因为浏览器 IME 和剪贴板快捷键依赖可聚焦输入元素。
   const handleKeyDown = (event: KeyboardEvent<HTMLTextAreaElement>) => {
     const context = canvasRef.current?.getContext('2d');
     if (!layout || !context) {

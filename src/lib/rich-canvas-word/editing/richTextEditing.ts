@@ -7,6 +7,11 @@ import {
   type RichTextEditResult,
 } from './richTextNormalization';
 
+// editing 聚合出口。
+//
+// 历史上调用方从 richTextEditing 导入所有编辑函数；拆分后仍保留这个文件作为兼容入口。
+// 当前文件只保留“普通文本插入”实现，其余命令通过 re-export 暴露。
+
 export { compareRichTextPositions, getRichDocumentBoundaryPositions, isSameRichTextPosition } from './richTextPosition';
 export { deleteRichTextSelection, extractRichTextSelectionPlainText, normalizeRichTextSelection } from './richTextSelection';
 export {
@@ -38,6 +43,8 @@ export {
 // - 格式命令会拆分 run，因此后续需要归一化并重定位 cursor/selection。
 // - 删除、回车、粘贴等操作都应该返回新的 document 和新的 cursor。
 
+// 在指定 position 插入普通文本。
+// marksOverride 用于“无选区但开启了后续输入格式”的场景，此时会创建独立 run，避免污染原 run 样式。
 export function insertTextAtRichPosition(
   document: RichTextDocument,
   position: RichTextPosition | null,

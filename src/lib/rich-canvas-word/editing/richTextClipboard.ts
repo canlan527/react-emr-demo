@@ -6,6 +6,7 @@ import { richTextSliceToPlainText } from './richTextEditing';
 // 内部复制粘贴使用 RichTextClipboardSlice 保留结构；写入系统剪贴板时，
 // 同时提供 text/plain 和 text/html，让外部富文本编辑器尽量保留基础样式。
 
+// 手写 HTML 序列化时必须转义用户文本，避免复制出的 HTML 破坏结构或引入脚本片段。
 function escapeHtml(value: string) {
   return value
     .replace(/&/g, '&amp;')
@@ -19,6 +20,7 @@ function alignToCss(align: RichTextAlign) {
   return align === 'center' ? 'center' : align === 'right' ? 'right' : 'left';
 }
 
+// 将 run marks 映射成内联 CSS。系统剪贴板中的 text/html 需要自包含样式。
 function marksToCss(marks: RichTextMarks) {
   const styles: string[] = [];
 
@@ -49,6 +51,8 @@ function marksToCss(marks: RichTextMarks) {
   return styles.join('; ');
 }
 
+// 把内部 slice 序列化成简化 HTML。
+// 外层 data-rich-canvas-word 标记用于调试和未来识别本编辑器来源。
 export function serializeRichTextSliceToHtml(slice: RichTextClipboardSlice | null) {
   if (!slice) {
     return '';
@@ -73,6 +77,8 @@ export function serializeRichTextSliceToHtml(slice: RichTextClipboardSlice | nul
   return `<div data-rich-canvas-word="true">${blocks}</div>`;
 }
 
+// 写入系统剪贴板时优先使用 ClipboardItem 同时写 text/html 和 text/plain。
+// 浏览器不支持时降级为纯文本，保证复制至少可用。
 export async function writeRichTextClipboard(slice: RichTextClipboardSlice | null, plainText?: string) {
   const text = plainText ?? richTextSliceToPlainText(slice);
   if (!text) {
@@ -121,6 +127,7 @@ function readAlign(value: string): RichTextAlign {
   return value === 'center' || value === 'right' ? value : 'left';
 }
 
+// HTML 粘贴解析采用“继承 marks”模型：父节点样式向子节点传递，子节点样式覆盖或补充。
 function mergeMarks(parentMarks: RichTextMarks, element: Element): RichTextMarks {
   const next: RichTextMarks = { ...parentMarks };
   const tagName = element.tagName.toLowerCase();
@@ -163,6 +170,7 @@ function mergeMarks(parentMarks: RichTextMarks, element: Element): RichTextMarks
   return next;
 }
 
+// 深度遍历 DOM，把文本节点收集为 run；br 映射为换行 run。
 function collectRuns(node: Node, marks: RichTextMarks, runs: RichTextRun[]) {
   if (node.nodeType === Node.TEXT_NODE) {
     const text = node.textContent ?? '';
@@ -189,6 +197,7 @@ function collectRuns(node: Node, marks: RichTextMarks, runs: RichTextRun[]) {
   node.childNodes.forEach((child) => collectRuns(child, nextMarks, runs));
 }
 
+// 将外部 HTML 的块级元素转换成内部 block。无法提取有效文本时丢弃。
 function elementToBlock(element: Element): RichTextBlock | null {
   const tagName = element.tagName.toLowerCase();
   const isHeading = /^h[1-6]$/.test(tagName);
@@ -210,6 +219,8 @@ function elementToBlock(element: Element): RichTextBlock | null {
   };
 }
 
+// 将系统剪贴板 HTML 转换成内部富文本 slice。
+// 只解析基础块元素和常用内联样式，复杂 Word/网页 HTML 会被降级为可编辑的简单结构。
 export function parseHtmlToRichTextSlice(html: string): RichTextClipboardSlice | null {
   if (!html.trim()) {
     return null;
@@ -226,6 +237,7 @@ export function parseHtmlToRichTextSlice(html: string): RichTextClipboardSlice |
   return blocks.length > 0 ? { blocks } : null;
 }
 
+// 读取系统剪贴板中的 text/html。权限或浏览器能力不足时静默返回空串，调用方再走纯文本粘贴。
 export async function readClipboardHtml() {
   if (!navigator.clipboard.read) {
     return '';
