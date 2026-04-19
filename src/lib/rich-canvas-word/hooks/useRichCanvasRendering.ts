@@ -10,6 +10,7 @@ type UseRichCanvasRenderingInput = {
   document: RichTextDocument;
   focusRequest: number;
   inputRef?: RefObject<HTMLTextAreaElement | null>;
+  scrollerRef?: RefObject<HTMLDivElement | null>;
   selection: RichTextSelection | null;
   zoom: number;
 };
@@ -26,6 +27,7 @@ export function useRichCanvasRendering({
   document,
   focusRequest,
   inputRef: externalInputRef,
+  scrollerRef,
   selection,
   zoom,
 }: UseRichCanvasRenderingInput) {
@@ -75,6 +77,35 @@ export function useRichCanvasRendering({
     input.style.top = `${canvas.offsetTop + cursorRect.y * zoom}px`;
     input.style.height = `${Math.max(28, cursorRect.height * zoom)}px`;
   }, [cursor, layout, zoom]);
+
+  useEffect(() => {
+    const canvas = canvasRef.current;
+    const scroller = scrollerRef?.current;
+    const context = canvas?.getContext('2d');
+    if (!canvas || !context || !layout || !scroller) {
+      return;
+    }
+
+    const cursorRect = getRichCursorRect(context, layout, cursor);
+    if (!cursorRect) {
+      return;
+    }
+
+    const caretTop = canvas.offsetTop + cursorRect.y * zoom;
+    const caretBottom = caretTop + cursorRect.height * zoom;
+    const visibleTop = scroller.scrollTop;
+    const visibleBottom = visibleTop + scroller.clientHeight;
+    const margin = 40;
+
+    if (caretBottom + margin > visibleBottom) {
+      scroller.scrollTop = caretBottom + margin - scroller.clientHeight;
+      return;
+    }
+
+    if (caretTop - margin < visibleTop) {
+      scroller.scrollTop = Math.max(0, caretTop - margin);
+    }
+  }, [cursor, layout, scrollerRef, zoom]);
 
   useEffect(() => {
     if (focusRequest > 0) {

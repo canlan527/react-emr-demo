@@ -56,6 +56,7 @@ export function RichCanvasWordSurface({
 }: RichCanvasWordSurfaceProps) {
   const composingRef = useRef(false);
   const inputRef = useRef<HTMLTextAreaElement | null>(null);
+  const scrollerRef = useRef<HTMLDivElement | null>(null);
   const latestCursorRef = useRef<RichTextPosition | null>(cursor);
   const latestSelectionRef = useRef<RichTextSelection | null>(selection);
   const compositionHandlers = useRichCanvasCompositionHandlers({
@@ -71,6 +72,7 @@ export function RichCanvasWordSurface({
     document,
     focusRequest,
     inputRef,
+    scrollerRef,
     selection,
     zoom,
   });
@@ -120,7 +122,7 @@ export function RichCanvasWordSurface({
   return (
     <div className="rich-canvas-surface" aria-label="富文本正文画布">
       {toast ? <div className="emr-toast">{toast}</div> : null}
-      <div className="rich-canvas-scroller">
+      <div ref={scrollerRef} className="rich-canvas-scroller">
         <textarea
           ref={inputRef}
           className={`rich-canvas-ime-input${compositionHandlers.isComposing ? ' is-composing' : ''}`}

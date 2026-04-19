@@ -22,6 +22,8 @@
   - 记录 v0 主组件 `CanvasWordRecord.tsx` 的拆分阶段、目标文件和每阶段验收清单。
 - [09-rich-canvas-word-v1-plan.md](./09-rich-canvas-word-v1-plan.md)
   - 记录 rich-canvas-word v1 的详细规划，包括 Canvas 工具栏、block + run 文档模型、目录结构、IME 代理和分阶段实现计划。
+- [10-rich-canvas-word-next-plan.md](./10-rich-canvas-word-next-plan.md)
+  - 记录 rich-canvas-word v1 核心链路完成后的产品化能力、文档持久化、分页滚动跟随、只读模式、查找替换和导入导出规划。
 
 ## 当前项目定位
 
@@ -43,6 +45,8 @@
 - 当前富文本复制、剪切、粘贴已支持当前 rich editor 内部保留格式；复制/剪切会写入 `text/html` + `text/plain`，粘贴时也会尝试读取外部 `text/html` 并还原基础格式。
 - 富文本 v1 已支持工具栏固定档位页面缩放，缩放不改变文档内容。
 - 富文本 v1 已支持配置化字号、文字颜色和高亮色循环切换。
+- 页面主工作区已调整为左侧紧凑病历头 + 右侧内容区，电子病历和富文本编辑器首屏可展示更多正文内容。
+- 富文本 v1 已支持分页输入时自动滚动到光标附近。
 - 项目包管理器已切换为 pnpm。
 
 ## 接手建议
