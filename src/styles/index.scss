@@ -32,7 +32,7 @@ button {
 }
 
 .app-shell {
-  @apply mx-auto flex min-h-screen w-full max-w-[1480px] flex-col gap-5 px-4 py-5 text-clinical-ink sm:px-6 lg:px-8;
+  @apply mx-auto flex min-h-screen w-full max-w-[1680px] flex-col gap-5 px-4 py-5 text-clinical-ink sm:px-6 lg:px-8;
 }
 
 .top-strip {
@@ -98,15 +98,23 @@ h2 {
   @apply cursor-not-allowed opacity-45 hover:bg-inherit;
 }
 
+.workspace-layout {
+  @apply grid gap-5 lg:grid-cols-[220px_minmax(0,1fr)] xl:grid-cols-[240px_minmax(0,1fr)];
+}
+
+.workspace-content {
+  @apply grid min-w-0 gap-5;
+}
+
 .patient-card {
-  @apply grid gap-5 rounded-lg bg-white p-5 shadow-panel xl:grid-cols-[280px_1fr];
+  @apply grid gap-4 rounded-lg bg-white p-4 shadow-panel lg:sticky lg:top-5 lg:self-start;
 }
 
 .patient-main {
   @apply min-w-0;
 
   h2 {
-    @apply mt-3 text-3xl;
+    @apply mt-3 text-2xl lg:text-3xl;
   }
 
   p {
@@ -119,12 +127,12 @@ h2 {
 }
 
 .patient-grid {
-  @apply grid gap-3 sm:grid-cols-2 xl:grid-cols-4;
+  @apply grid gap-2 sm:grid-cols-2 lg:grid-cols-1;
 }
 
 .standard-fields {
   div {
-    @apply min-h-20 rounded-lg border border-clinical-line bg-clinical-surface p-3;
+    @apply min-h-0 rounded-lg border border-clinical-line bg-clinical-surface p-3 lg:p-2.5;
   }
 
   span {
@@ -132,7 +140,7 @@ h2 {
   }
 
   strong {
-    @apply mt-2 block break-words text-base text-clinical-ink;
+    @apply mt-1 block break-words text-sm text-clinical-ink xl:text-base;
   }
 }
 
