@@ -1,6 +1,7 @@
 import { FormEvent, useEffect, useMemo, useState } from 'react';
 import { TemperatureChart } from './components/TemperatureChart';
 import { CanvasWordRecord } from './lib/canvas-word-basic/CanvasWordRecord';
+import { RichCanvasWordRecord } from './lib/rich-canvas-word/RichCanvasWordRecord';
 import {
   createRecord,
   createSampleRecords,
@@ -9,7 +10,7 @@ import {
 } from './data/vitals';
 import type { TemperatureMethod, VitalRecord } from './data/vitals';
 
-type Route = '/overview' | '/temperature' | '/medical-record';
+type Route = '/overview' | '/temperature' | '/medical-record' | '/rich-canvas-word';
 
 type VitalFormState = {
   date: string;
@@ -25,6 +26,7 @@ const routeLabels: Record<Route, string> = {
   '/overview': '病历概览',
   '/temperature': '体温单',
   '/medical-record': '查看电子病例',
+  '/rich-canvas-word': '富文本 V1',
 };
 
 function readRoute(): Route {
@@ -34,6 +36,10 @@ function readRoute(): Route {
 
   if (window.location.pathname === '/medical-record') {
     return '/medical-record';
+  }
+
+  if (window.location.pathname === '/rich-canvas-word') {
+    return '/rich-canvas-word';
   }
 
   return '/temperature';
@@ -207,6 +213,10 @@ function App() {
 
       {route === '/medical-record' ? (
         <CanvasWordRecord patient={patientInfo} />
+      ) : null}
+
+      {route === '/rich-canvas-word' ? (
+        <RichCanvasWordRecord />
       ) : null}
 
       {route === '/temperature' ? (

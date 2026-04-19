@@ -478,7 +478,7 @@ h2 {
 }
 
 .rich-canvas-surface {
-  @apply rounded-b-lg border-x border-b border-clinical-line bg-[#dfe8ee];
+  @apply relative rounded-b-lg border-x border-b border-clinical-line bg-[#dfe8ee];
 }
 
 .rich-canvas-scroller {

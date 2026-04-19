@@ -20,6 +20,8 @@
   - 记录 Canvas Word 从 v0 基础版到 rich-canvas-word v1/v2，再到 medical-record 业务包装层的版本路线、富文本模型和拆分步骤。
 - [08-canvas-word-record-refactor-plan.md](./08-canvas-word-record-refactor-plan.md)
   - 记录 v0 主组件 `CanvasWordRecord.tsx` 的拆分阶段、目标文件和每阶段验收清单。
+- [09-rich-canvas-word-v1-plan.md](./09-rich-canvas-word-v1-plan.md)
+  - 记录 rich-canvas-word v1 的详细规划，包括 Canvas 工具栏、block + run 文档模型、目录结构、IME 代理和分阶段实现计划。
 
 ## 当前项目定位
 
@@ -36,7 +38,11 @@
 - 体温单图表、录入表单和示例数据重置已实现。
 - 电子病历路由、病历头和 Canvas Word 基础编辑能力已实现。
 - 中文输入、鼠标选区、右键菜单、剪贴板、撤销/重做已实现。
-- 富文本工具栏目前仅完成需求和架构计划，尚未实现 UI 和富文本模型。
+- `rich-canvas-word` v1 已新增临时入口 `/rich-canvas-word`。
+- 富文本 v1 已实现 block + run 模型、Canvas 正文渲染、Canvas 工具栏、输入、IME、选区、撤销/重做和基础格式命令。
+- 当前富文本复制、剪切、粘贴已支持当前 rich editor 内部保留格式；复制/剪切会写入 `text/html` + `text/plain`，粘贴时也会尝试读取外部 `text/html` 并还原基础格式。
+- 富文本 v1 已支持工具栏固定档位页面缩放，缩放不改变文档内容。
+- 富文本 v1 已支持配置化字号、文字颜色和高亮色循环切换。
 - 项目包管理器已切换为 pnpm。
 
 ## 接手建议
@@ -49,3 +55,4 @@
 4. 若要继续修 Canvas 编辑器，重点读 [05-canvas-editor-architecture.md](./05-canvas-editor-architecture.md) 和 [06-known-issues-and-next-steps.md](./06-known-issues-and-next-steps.md)。
 5. 若要做富文本工具栏、规划 Canvas Word 版本演进或拆分目录，读 [07-canvas-word-version-roadmap.md](./07-canvas-word-version-roadmap.md)。
 6. 若要拆分 `CanvasWordRecord.tsx`，按 [08-canvas-word-record-refactor-plan.md](./08-canvas-word-record-refactor-plan.md) 分阶段推进。
+7. 若要开始实现富文本 v1，读 [09-rich-canvas-word-v1-plan.md](./09-rich-canvas-word-v1-plan.md)。
