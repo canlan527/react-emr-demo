@@ -1,4 +1,4 @@
-import type { RichTextBlock, RichTextDocument, RichTextPosition, RichTextRun } from '../richTypes';
+import type { RichTextDocument, RichTextPosition } from '../richTypes';
 import { clampOffset, findBlockAndRun, getOrderedRuns, getTextBoundaries, updateRunText } from './richTextPosition';
 import { createBlockId, createEmptyRun, createRunId, type RichTextEditResult } from './richTextNormalization';
 

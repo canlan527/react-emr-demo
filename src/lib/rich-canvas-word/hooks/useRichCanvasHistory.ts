@@ -22,6 +22,7 @@ type UseRichCanvasHistoryOptions = {
   activeMarks: RichTextMarks;
   cursor: RichTextPosition | null;
   document: RichTextDocument;
+  onDocumentChange?: () => void;
   selection: RichTextSelection | null;
   setActiveMarks: Dispatch<SetStateAction<RichTextMarks>>;
   setCursor: Dispatch<SetStateAction<RichTextPosition | null>>;
@@ -36,6 +37,7 @@ export function useRichCanvasHistory({
   activeMarks,
   cursor,
   document,
+  onDocumentChange,
   selection,
   setActiveMarks,
   setCursor,
@@ -64,6 +66,7 @@ export function useRichCanvasHistory({
         past: [...current.past, createCurrentSnapshot()].slice(-maxHistorySize),
         future: [],
       }));
+      onDocumentChange?.();
     }
 
     setDocument(nextDocument);
@@ -86,6 +89,7 @@ export function useRichCanvasHistory({
     setCursor(snapshot.cursor);
     setSelection(snapshot.selection);
     setActiveMarks(snapshot.activeMarks);
+    onDocumentChange?.();
     setToast('已撤销操作');
   };
 
@@ -104,7 +108,12 @@ export function useRichCanvasHistory({
     setCursor(snapshot.cursor);
     setSelection(snapshot.selection);
     setActiveMarks(snapshot.activeMarks);
+    onDocumentChange?.();
     setToast('已回退');
+  };
+
+  const resetHistory = () => {
+    setHistory({ past: [], future: [] });
   };
 
   return {
@@ -112,6 +121,7 @@ export function useRichCanvasHistory({
     canUndo: history.past.length > 0,
     commitEdit,
     redo,
+    resetHistory,
     undo,
   };
 }

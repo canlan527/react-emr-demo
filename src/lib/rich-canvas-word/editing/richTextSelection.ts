@@ -1,4 +1,4 @@
-import type { RichTextDocument, RichTextPosition, RichTextSelection } from '../richTypes';
+import type { RichTextDocument, RichTextSelection } from '../richTypes';
 import { clampOffset, compareRichTextPositions, findBlockAndRun, isSameRichTextPosition } from './richTextPosition';
 import { createRunId, type RichTextEditResult } from './richTextNormalization';
 

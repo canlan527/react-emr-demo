@@ -1,5 +1,6 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { sampleRichTextDocument } from '../document/richTextDocument';
+import { clearRichCanvasWordDraft, loadRichCanvasWordDraft, saveRichCanvasWordDraft } from '../document/richTextPersistence';
 import { useRichCanvasClipboardCommands } from './useRichCanvasClipboardCommands';
 import { useRichCanvasFormatCommands } from './useRichCanvasFormatCommands';
 import { useRichCanvasHistory } from './useRichCanvasHistory';
@@ -14,6 +15,7 @@ import type {
 } from '../richTypes';
 
 const toastDuration = 1600;
+const autoSaveDelay = 1500;
 const zoomLevels = [0.75, 1, 1.25, 1.5];
 
 // 创建文档首次打开时的默认光标。当前策略是落到第一段第一个 run 的开头。
@@ -31,19 +33,55 @@ function getInitialRichTextPosition(document: RichTextDocument): RichTextPositio
   };
 }
 
+type SaveKind = 'manual' | 'auto' | null;
+
+function formatSavedAt(value: string | null, kind: SaveKind) {
+  if (!value) {
+    return '尚未保存';
+  }
+
+  const date = new Date(value);
+  if (Number.isNaN(date.getTime())) {
+    return kind === 'auto' ? '已自动保存' : '已保存';
+  }
+
+  const label = kind === 'auto' ? '已自动保存' : '已保存';
+  return `${label} ${date.toLocaleTimeString('zh-CN', { hour: '2-digit', minute: '2-digit' })}`;
+}
+
 // rich-canvas-word 的 editor 聚合 hook。
 //
 // 这里持有运行时状态，并把 history、format、clipboard、text commands 等子 hook 组装起来。
 // 具体编辑算法尽量下沉到 editing/layout 模块，方便后续把这个 hook 包装成受控组件。
 export function useRichCanvasWordEditor() {
-  const [document, setDocument] = useState<RichTextDocument>(sampleRichTextDocument);
-  const [cursor, setCursor] = useState<RichTextPosition | null>(() => getInitialRichTextPosition(sampleRichTextDocument));
+  const [initialDraft] = useState(() => loadRichCanvasWordDraft());
+  const [document, setDocument] = useState<RichTextDocument>(() => initialDraft?.document ?? sampleRichTextDocument);
+  const [cursor, setCursor] = useState<RichTextPosition | null>(() =>
+    getInitialRichTextPosition(initialDraft?.document ?? sampleRichTextDocument),
+  );
   const [selection, setSelection] = useState<RichTextSelection | null>(null);
   const [activeMarks, setActiveMarks] = useState<RichTextMarks>({});
   const [focusRequest, setFocusRequest] = useState(0);
   const [richClipboard, setRichClipboard] = useState<RichTextClipboardSlice | null>(null);
   const [zoom, setZoom] = useState(1);
   const [toast, setToast] = useState('');
+  const [hasDocumentChangedSinceLoad, setHasDocumentChangedSinceLoad] = useState(false);
+  const [lastSavedAt, setLastSavedAt] = useState<string | null>(() => initialDraft?.savedAt ?? null);
+  const [lastSaveKind, setLastSaveKind] = useState<SaveKind>(() => (initialDraft ? 'manual' : null));
+  const [isSaving, setIsSaving] = useState(false);
+  const [savedDocumentSnapshot, setSavedDocumentSnapshot] = useState<string | null>(() =>
+    initialDraft ? JSON.stringify(initialDraft.document) : null,
+  );
+  const currentDocumentSnapshot = useMemo(() => JSON.stringify(document), [document]);
+  const hasUnsavedChanges = savedDocumentSnapshot
+    ? currentDocumentSnapshot !== savedDocumentSnapshot
+    : hasDocumentChangedSinceLoad;
+
+  useEffect(() => {
+    if (initialDraft) {
+      setToast('已恢复本地草稿');
+    }
+  }, [initialDraft]);
 
   useEffect(() => {
     if (!toast) {
@@ -54,10 +92,47 @@ export function useRichCanvasWordEditor() {
     return () => window.clearTimeout(timer);
   }, [toast]);
 
-  const { canRedo, canUndo, commitEdit, redo, undo } = useRichCanvasHistory({
+  const persistDraft = (kind: Exclude<SaveKind, null>, options?: { showToast?: boolean }) => {
+    setIsSaving(true);
+
+    window.setTimeout(() => {
+      const result = saveRichCanvasWordDraft(document);
+      setIsSaving(false);
+
+      if (result.ok) {
+        setHasDocumentChangedSinceLoad(false);
+        setLastSavedAt(result.savedAt);
+        setLastSaveKind(kind);
+        setSavedDocumentSnapshot(currentDocumentSnapshot);
+        if (options?.showToast) {
+          setToast(kind === 'auto' ? '已自动保存草稿' : '已保存草稿');
+        }
+        return;
+      }
+
+      if (options?.showToast) {
+        setToast('保存失败，请稍后重试');
+      }
+    }, 0);
+  };
+
+  useEffect(() => {
+    if (!hasUnsavedChanges) {
+      return;
+    }
+
+    const timer = window.setTimeout(() => {
+      persistDraft('auto');
+    }, autoSaveDelay);
+
+    return () => window.clearTimeout(timer);
+  }, [currentDocumentSnapshot, hasUnsavedChanges]);
+
+  const { canRedo, canUndo, commitEdit, redo, resetHistory, undo } = useRichCanvasHistory({
     activeMarks,
     cursor,
     document,
+    onDocumentChange: () => setHasDocumentChangedSinceLoad(true),
     selection,
     setActiveMarks,
     setCursor,
@@ -90,6 +165,28 @@ export function useRichCanvasWordEditor() {
 
     if (command === 'redo') {
       redo();
+      return;
+    }
+
+    if (command === 'save') {
+      persistDraft('manual', { showToast: true });
+      return;
+    }
+
+    if (command === 'resetDocument') {
+      clearRichCanvasWordDraft();
+      setDocument(sampleRichTextDocument);
+      setCursor(getInitialRichTextPosition(sampleRichTextDocument));
+      setSelection(null);
+      setActiveMarks({});
+      setRichClipboard(null);
+      setHasDocumentChangedSinceLoad(false);
+      setLastSavedAt(null);
+      setLastSaveKind(null);
+      setIsSaving(false);
+      setSavedDocumentSnapshot(null);
+      resetHistory();
+      setToast('已恢复示例文档，并清除本地草稿');
       return;
     }
 
@@ -146,6 +243,7 @@ export function useRichCanvasWordEditor() {
     document,
     focusRequest,
     selection,
+    saveStatus: isSaving ? '正在保存...' : hasUnsavedChanges ? '未保存更改' : formatSavedAt(lastSavedAt, lastSaveKind),
     toast,
     toolbarItems,
     zoom,

@@ -469,6 +469,14 @@ h2 {
   }
 }
 
+.rich-canvas-heading-status {
+  @apply flex flex-wrap gap-2;
+
+  span.is-dirty {
+    @apply border-[#f59e0b] bg-[#fff7ed] text-[#b45309];
+  }
+}
+
 .rich-canvas-toolbar {
   @apply overflow-hidden rounded-t-lg border border-clinical-line bg-white;
 

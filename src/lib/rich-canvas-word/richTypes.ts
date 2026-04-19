@@ -113,6 +113,8 @@ export type ToolbarCommand =
   | 'alignLeft'
   | 'alignCenter'
   | 'alignRight'
+  | 'resetDocument'
+  | 'save'
   | 'zoom';
 
 export type ToolbarItem =

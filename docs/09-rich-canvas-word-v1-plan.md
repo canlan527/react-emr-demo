@@ -1798,3 +1798,5 @@ v1 开发初期不要急着实现所有按钮。
 富文本编辑器的难点不在按钮数量，而在 `document -> layout -> renderer -> hit test -> editing command -> history` 这条链路是否稳定。
 
 只要这条链路稳定，后续增加更多工具栏按钮和业务包装能力就会顺很多。
+
+后续功能规划不再继续追加到本文档，统一参考 `docs/10-rich-canvas-word-next-plan.md`。

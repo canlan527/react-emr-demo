@@ -3,6 +3,9 @@ import type { ToolbarItem } from '../richTypes';
 // 工具栏配置只描述“有哪些按钮”和默认展示文本。
 // active/disabled 状态会在 RichCanvasWordRecord 中根据 editor state 动态派生。
 export const richToolbarItems: ToolbarItem[] = [
+  { id: 'save', type: 'button', command: 'save', label: 'Save' },
+  { id: 'reset-document', type: 'button', command: 'resetDocument', label: 'Reset' },
+  { id: 'sep-save', type: 'separator' },
   { id: 'undo', type: 'button', command: 'undo', label: 'Undo', disabled: true },
   { id: 'redo', type: 'button', command: 'redo', label: 'Redo' },
   { id: 'sep-history', type: 'separator' },
