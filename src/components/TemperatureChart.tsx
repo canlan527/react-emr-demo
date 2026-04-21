@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import * as d3 from 'd3';
 import type { TemperatureMethod, VitalRecord } from '../data/vitals';
+import './styles/TemperatureChart.scss';
 
 type TemperatureChartProps = {
   records: VitalRecord[];

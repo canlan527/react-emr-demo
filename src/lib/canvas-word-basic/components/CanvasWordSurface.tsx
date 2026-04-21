@@ -13,6 +13,7 @@
 import type { CompositionEvent, FormEvent, KeyboardEvent, MouseEvent, RefObject } from 'react';
 import { CanvasWordContextMenu } from './CanvasWordContextMenu';
 import type { ContextMenuState } from '../wordTypes';
+import './styles/CanvasWordSurface.scss';
 
 type CanvasWordSurfaceProps = {
   editorRef: RefObject<HTMLDivElement | null>;

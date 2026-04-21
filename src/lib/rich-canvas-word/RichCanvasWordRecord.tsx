@@ -1,6 +1,7 @@
 import { RichCanvasToolbar } from './components/RichCanvasToolbar';
 import { RichCanvasWordSurface } from './components/RichCanvasWordSurface';
 import { useRichCanvasWordEditor } from './hooks/useRichCanvasWordEditor';
+import './styles/RichCanvasWordRecord.scss';
 
 // Rich Canvas Word v1 container.
 // The editor state and commands live in useRichCanvasWordEditor; this component only

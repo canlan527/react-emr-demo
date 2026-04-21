@@ -1,0 +1,19 @@
+.rich-canvas-word {
+  @apply rounded-lg bg-white p-4 shadow-panel sm:p-5;
+}
+
+.rich-canvas-heading {
+  @apply mb-4 flex flex-col justify-between gap-3 lg:flex-row lg:items-end;
+
+  span {
+    @apply inline-flex w-fit rounded-md border border-clinical-line bg-clinical-surface px-3 py-2 text-sm font-bold text-clinical-muted;
+  }
+}
+
+.rich-canvas-heading-status {
+  @apply flex flex-wrap gap-2;
+
+  span.is-dirty {
+    @apply border-[#f59e0b] bg-[#fff7ed] text-[#b45309];
+  }
+}

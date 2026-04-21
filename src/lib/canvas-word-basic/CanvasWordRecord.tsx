@@ -37,6 +37,7 @@ import { useCanvasWordKeyboard } from './hooks/useCanvasWordKeyboard';
 import { useCanvasWordMouseSelection } from './hooks/useCanvasWordMouseSelection';
 import type { LayoutLine } from './layout/canvasTextLayout';
 import type { CanvasWordRecordProps, ContextMenuState, CursorHitMode } from './wordTypes';
+import './styles/CanvasWordRecord.scss';
 
 const toastDuration = 1600;
 

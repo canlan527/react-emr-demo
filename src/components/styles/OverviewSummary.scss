@@ -1,0 +1,19 @@
+.summary-grid {
+  @apply grid gap-4 sm:grid-cols-2 xl:grid-cols-5;
+}
+
+.summary-item {
+  @apply min-h-32 rounded-lg border border-clinical-line bg-white p-4 shadow-panel;
+
+  span {
+    @apply block text-xs font-bold text-clinical-muted;
+  }
+
+  strong {
+    @apply mt-3 block text-2xl text-clinical-ink;
+  }
+
+  p {
+    @apply mt-3 text-sm text-clinical-muted;
+  }
+}

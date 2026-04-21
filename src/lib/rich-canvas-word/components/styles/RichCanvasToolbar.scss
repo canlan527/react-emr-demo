@@ -1,0 +1,7 @@
+.rich-canvas-toolbar {
+  @apply overflow-hidden rounded-t-lg border border-clinical-line bg-white;
+
+  canvas {
+    @apply block h-[52px] w-full;
+  }
+}

@@ -1,0 +1,75 @@
+.chart-panel,
+.entry-panel {
+  @apply rounded-lg bg-white p-4 shadow-panel sm:p-5;
+}
+
+.panel-heading {
+  @apply mb-4 flex flex-col justify-between gap-4 lg:flex-row lg:items-end;
+}
+
+.legend-row {
+  @apply flex flex-wrap gap-3 text-sm font-bold text-clinical-muted;
+}
+
+.legend-symbol,
+.legend-line,
+.legend-bar {
+  @apply inline-flex items-center gap-2;
+
+  &::before {
+    content: '';
+    @apply block h-3 w-3;
+  }
+}
+
+.legend-symbol.oral::before {
+  @apply rounded-full bg-[#d64545];
+}
+
+.legend-symbol.axillary::before {
+  @apply bg-[#2878d0];
+}
+
+.legend-symbol.rectal::before {
+  @apply bg-[#2f855a];
+  clip-path: polygon(50% 0, 100% 100%, 0 100%);
+}
+
+.legend-line::before {
+  @apply h-0 w-8 border-t-2;
+}
+
+.legend-line.pulse::before {
+  @apply border-clinical-pulse;
+  border-style: dashed;
+}
+
+.legend-line.reference::before {
+  @apply border-clinical-fever;
+  border-style: dashed;
+}
+
+.legend-bar::before {
+  @apply h-4 w-2 rounded-sm bg-[#2878d0];
+}
+
+.entry-panel {
+  @apply grid gap-5 xl:grid-cols-[240px_1fr];
+}
+
+.vital-form {
+  @apply grid gap-3 sm:grid-cols-2 lg:grid-cols-4;
+
+  label {
+    @apply grid gap-2 text-sm font-bold text-clinical-muted;
+  }
+
+  input,
+  select {
+    @apply h-11 w-full rounded-lg border border-clinical-line bg-white px-3 text-clinical-ink outline-none transition focus:border-clinical-pulse focus:ring-2 focus:ring-[#1f7a8c]/20;
+  }
+}
+
+.form-actions {
+  @apply flex flex-wrap items-end gap-3 lg:col-span-4;
+}

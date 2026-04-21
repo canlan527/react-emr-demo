@@ -4,6 +4,7 @@ import { useRichCanvasKeyboardHandlers } from '../hooks/useRichCanvasKeyboardHan
 import { useRichCanvasPointerHandlers } from '../hooks/useRichCanvasPointerHandlers';
 import { useRichCanvasRendering } from '../hooks/useRichCanvasRendering';
 import type { RichTextDocument, RichTextFormatCommand, RichTextPosition, RichTextSelection } from '../richTypes';
+import './styles/RichCanvasWordSurface.scss';
 
 // 正文 Surface 负责 DOM 事件和 Canvas 编辑体验的桥接。
 //

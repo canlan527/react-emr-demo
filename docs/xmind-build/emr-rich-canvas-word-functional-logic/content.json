@@ -1,0 +1,428 @@
+[
+  {
+    "id": "sheet-functional-logic",
+    "class": "sheet",
+    "title": "电子病历与 Rich Canvas Word 功能实现逻辑",
+    "rootTopic": {
+      "id": "root",
+      "class": "topic",
+      "title": "电子病历与 Rich Canvas Word 功能实现逻辑",
+      "children": {
+        "attached": [
+          {
+            "id": "app-shell",
+            "class": "topic",
+            "title": "1. 页面与业务入口",
+            "children": {
+              "attached": [
+                {
+                  "id": "app-route",
+                  "class": "topic",
+                  "title": "App.tsx 用 History API 维护轻量路由",
+                  "children": {
+                    "attached": [
+                      { "id": "route-temperature", "class": "topic", "title": "/temperature：体温单和床旁录入" },
+                      { "id": "route-overview", "class": "topic", "title": "/overview：病历概览统计" },
+                      { "id": "route-medical-record", "class": "topic", "title": "/medical-record：v0 纯文本电子病历" },
+                      { "id": "route-rich", "class": "topic", "title": "/rich-canvas-word：v1 富文本编辑器" }
+                    ]
+                  }
+                },
+                {
+                  "id": "workspace-layout",
+                  "class": "topic",
+                  "title": "workspace-layout：左侧病历头 + 右侧工作区",
+                  "children": {
+                    "attached": [
+                      { "id": "patient-sidebar", "class": "topic", "title": "patient-card 竖排展示患者字段，桌面端 sticky" },
+                      { "id": "workspace-content", "class": "topic", "title": "workspace-content 承载图表、v0 编辑器或富文本编辑器" },
+                      { "id": "layout-value", "class": "topic", "title": "目的：减少病历头占用高度，让编辑器首屏看到更多正文" }
+                    ]
+                  }
+                },
+                {
+                  "id": "patient-data",
+                  "class": "topic",
+                  "title": "patientInfo 是页面和病历文档的共同业务数据源",
+                  "children": {
+                    "attached": [
+                      { "id": "patient-head", "class": "topic", "title": "用于左侧病历头展示" },
+                      { "id": "medical-doc-source", "class": "topic", "title": "用于生成电子病历示例文档" },
+                      { "id": "future-field-insert", "class": "topic", "title": "未来可作为插入患者字段的业务命令来源" }
+                    ]
+                  }
+                }
+              ]
+            }
+          },
+          {
+            "id": "medical-record",
+            "class": "topic",
+            "title": "2. 电子病历业务层实现思路",
+            "children": {
+              "attached": [
+                {
+                  "id": "medical-record-model",
+                  "class": "topic",
+                  "title": "medicalRecordDocument.ts 定义结构化病历",
+                  "children": {
+                    "attached": [
+                      { "id": "mr-doc", "class": "topic", "title": "MedicalRecordDocument：病历文档容器" },
+                      { "id": "mr-heading", "class": "topic", "title": "heading：标题块" },
+                      { "id": "mr-paragraph", "class": "topic", "title": "paragraph：段落块" },
+                      { "id": "mr-field-group", "class": "topic", "title": "fieldGroup：患者字段组" }
+                    ]
+                  }
+                },
+                {
+                  "id": "current-v0-flow",
+                  "class": "topic",
+                  "title": "当前 /medical-record：结构化文档先转纯文本",
+                  "children": {
+                    "attached": [
+                      { "id": "doc-to-text", "class": "topic", "title": "documentToPlainText() 将 block 拼成文本流" },
+                      { "id": "text-to-v0", "class": "topic", "title": "纯文本交给 canvas-word-basic 排版和编辑" },
+                      { "id": "v0-limitation", "class": "topic", "title": "限制：编辑后丢失 block 语义和 run 样式" }
+                    ]
+                  }
+                },
+                {
+                  "id": "future-emr-wrapper",
+                  "class": "topic",
+                  "title": "未来 medical-record 包装层",
+                  "children": {
+                    "attached": [
+                      { "id": "convert-rich-doc", "class": "topic", "title": "把病历模板转换为 RichTextDocument" },
+                      { "id": "business-toolbar", "class": "topic", "title": "提供插入患者字段、模板、短语、医疗符号的业务工具栏" },
+                      { "id": "call-rich-command", "class": "topic", "title": "底层调用 rich-canvas-word 的通用插入和格式命令" },
+                      { "id": "quality-control", "class": "topic", "title": "后续接入结构化保存、字段绑定和病历质控" }
+                    ]
+                  }
+                }
+              ]
+            }
+          },
+          {
+            "id": "v0-basic",
+            "class": "topic",
+            "title": "3. canvas-word-basic v0 实现逻辑",
+            "children": {
+              "attached": [
+                {
+                  "id": "v0-state",
+                  "class": "topic",
+                  "title": "核心状态：text + cursor + selection",
+                  "children": {
+                    "attached": [
+                      { "id": "v0-text", "class": "topic", "title": "text：整篇文档的纯文本字符串" },
+                      { "id": "v0-cursor", "class": "topic", "title": "cursor：全局字符索引" },
+                      { "id": "v0-selection", "class": "topic", "title": "selection：anchor/focus 字符索引范围" }
+                    ]
+                  }
+                },
+                {
+                  "id": "v0-layout",
+                  "class": "topic",
+                  "title": "layout/canvasTextLayout.ts：纯文本排版",
+                  "children": {
+                    "attached": [
+                      { "id": "measure-text", "class": "topic", "title": "使用 ctx.measureText 按字符测量宽度" },
+                      { "id": "line-break", "class": "topic", "title": "自动换行，英文空格优先断行" },
+                      { "id": "punctuation", "class": "topic", "title": "中文标点避头和轻微字距补偿" },
+                      { "id": "pagination", "class": "topic", "title": "根据 A4 页面高度分页" },
+                      { "id": "font-record", "class": "topic", "title": "每行记录真实 font，避免选区宽度漂移" }
+                    ]
+                  }
+                },
+                {
+                  "id": "v0-render",
+                  "class": "topic",
+                  "title": "layout/canvasWordRenderer.ts：Canvas 绘制",
+                  "children": {
+                    "attached": [
+                      { "id": "draw-pages", "class": "topic", "title": "绘制页面背景、阴影、页码" },
+                      { "id": "draw-selection", "class": "topic", "title": "先绘制选区背景，再绘制文字" },
+                      { "id": "draw-text", "class": "topic", "title": "按 layout line 绘制文本" },
+                      { "id": "draw-cursor", "class": "topic", "title": "根据 cursor 对应行和 offset 绘制光标" }
+                    ]
+                  }
+                },
+                {
+                  "id": "v0-events",
+                  "class": "topic",
+                  "title": "事件处理拆成 hooks",
+                  "children": {
+                    "attached": [
+                      { "id": "v0-editor-hook", "class": "topic", "title": "useCanvasWordEditor：编辑命令、历史、toast" },
+                      { "id": "v0-keyboard", "class": "topic", "title": "useCanvasWordKeyboard：方向键、删除、快捷键" },
+                      { "id": "v0-mouse", "class": "topic", "title": "useCanvasWordMouseSelection：点击定位、拖拽选区" },
+                      { "id": "v0-ime", "class": "topic", "title": "useImeAnchor：透明 textarea 跟随光标，支持中文 IME" }
+                    ]
+                  }
+                }
+              ]
+            }
+          },
+          {
+            "id": "rich-v1",
+            "class": "topic",
+            "title": "4. rich-canvas-word v1 实现逻辑",
+            "children": {
+              "attached": [
+                {
+                  "id": "rich-model",
+                  "class": "topic",
+                  "title": "富文本模型：document -> block -> run -> marks",
+                  "children": {
+                    "attached": [
+                      { "id": "rich-document", "class": "topic", "title": "RichTextDocument：id、title、blocks" },
+                      { "id": "rich-block", "class": "topic", "title": "RichTextBlock：heading/paragraph、align、runs" },
+                      { "id": "rich-run", "class": "topic", "title": "RichTextRun：一段样式连续的文本" },
+                      { "id": "rich-marks", "class": "topic", "title": "RichTextMarks：bold、underline、color、backgroundColor、fontSize、fontFamily" },
+                      { "id": "rich-position", "class": "topic", "title": "RichTextPosition：blockId + runId + offset" },
+                      { "id": "rich-selection", "class": "topic", "title": "RichTextSelection：anchor/focus，使用前归一化" }
+                    ]
+                  }
+                },
+                {
+                  "id": "rich-container",
+                  "class": "topic",
+                  "title": "RichCanvasWordRecord 只负责组装",
+                  "children": {
+                    "attached": [
+                      { "id": "rich-title", "class": "topic", "title": "标题区展示 document.title 和保存状态" },
+                      { "id": "rich-toolbar", "class": "topic", "title": "RichCanvasToolbar 用独立 canvas 绘制工具栏" },
+                      { "id": "rich-surface", "class": "topic", "title": "RichCanvasWordSurface 用正文 canvas + textarea 输入代理承载编辑区" },
+                      { "id": "rich-editor-hook", "class": "topic", "title": "useRichCanvasWordEditor 持有核心状态和命令" }
+                    ]
+                  }
+                },
+                {
+                  "id": "rich-editing",
+                  "class": "topic",
+                  "title": "editing 目录：所有文档变更都走纯函数命令",
+                  "children": {
+                    "attached": [
+                      { "id": "insert-command", "class": "topic", "title": "insertTextAtRichPosition：按 cursor 插入文本，使用 activeMarks" },
+                      { "id": "delete-command", "class": "topic", "title": "deleteBefore/deleteAfter：删除字符或合并 block" },
+                      { "id": "split-block", "class": "topic", "title": "splitBlockAtRichTextPosition：Enter 拆分当前 block" },
+                      { "id": "format-command", "class": "topic", "title": "applyRichTextFormatToSelection：拆 run、改 marks、再归一化" },
+                      { "id": "align-command", "class": "topic", "title": "applyRichTextAlignToSelection：修改涉及 block 的 align" },
+                      { "id": "normalize", "class": "topic", "title": "richTextNormalization：合并相邻同样式 run，修复 cursor/selection" }
+                    ]
+                  }
+                },
+                {
+                  "id": "rich-layout-render",
+                  "class": "topic",
+                  "title": "layout 目录：document 到 Canvas 坐标",
+                  "children": {
+                    "attached": [
+                      { "id": "line-breaking", "class": "topic", "title": "richTextLineBreaking：按 run 字体测量、自动换行、分页" },
+                      { "id": "layout-result", "class": "topic", "title": "RichTextLayoutResult：lines、pages、width、height" },
+                      { "id": "fragments", "class": "topic", "title": "fragment 记录 run 片段、x/y、width、font、marks" },
+                      { "id": "caret", "class": "topic", "title": "richTextCaret：position 与光标矩形/选区矩形互转" },
+                      { "id": "hit-testing", "class": "topic", "title": "richTextHitTesting：鼠标坐标命中 RichTextPosition" },
+                      { "id": "renderer", "class": "topic", "title": "richTextRenderer：绘制页面、文字、背景高亮、下划线、选区、光标" }
+                    ]
+                  }
+                }
+              ]
+            }
+          },
+          {
+            "id": "event-flow",
+            "class": "topic",
+            "title": "5. 用户操作到文档更新的完整链路",
+            "children": {
+              "attached": [
+                {
+                  "id": "keyboard-flow",
+                  "class": "topic",
+                  "title": "键盘输入链路",
+                  "children": {
+                    "attached": [
+                      { "id": "keydown", "class": "topic", "title": "textarea 捕获 keydown" },
+                      { "id": "shortcut", "class": "topic", "title": "识别 Undo/Redo/Copy/Cut/Paste/方向键/Delete/Enter" },
+                      { "id": "call-command", "class": "topic", "title": "调用对应编辑命令，返回 document + cursor + selection" },
+                      { "id": "commit-edit", "class": "topic", "title": "commitEdit 写入状态、历史栈、保存状态" },
+                      { "id": "rerender", "class": "topic", "title": "状态变化触发 Canvas 重新排版绘制" }
+                    ]
+                  }
+                },
+                {
+                  "id": "ime-flow",
+                  "class": "topic",
+                  "title": "中文 IME 链路",
+                  "children": {
+                    "attached": [
+                      { "id": "composition-start", "class": "topic", "title": "compositionstart 标记输入法组合中" },
+                      { "id": "composition-update", "class": "topic", "title": "compositionupdate 保存临时 compositionText" },
+                      { "id": "preview-render", "class": "topic", "title": "渲染 preview document，让候选文本在 Canvas 内联预览" },
+                      { "id": "composition-end", "class": "topic", "title": "compositionend 提交最终文本到 document" },
+                      { "id": "ime-anchor", "class": "topic", "title": "textarea 位置跟随 getRichCursorRect，系统候选框跟随光标" }
+                    ]
+                  }
+                },
+                {
+                  "id": "pointer-flow",
+                  "class": "topic",
+                  "title": "鼠标链路",
+                  "children": {
+                    "attached": [
+                      { "id": "mouse-down", "class": "topic", "title": "mousedown 获取 canvas 坐标" },
+                      { "id": "hit-test-position", "class": "topic", "title": "hitTestRichTextPosition 转为 RichTextPosition" },
+                      { "id": "single-click", "class": "topic", "title": "单击设置 cursor 并取消 selection" },
+                      { "id": "drag-selection", "class": "topic", "title": "拖拽时更新 anchor/focus 形成选区" },
+                      { "id": "empty-selection", "class": "topic", "title": "anchor 与 focus 相同时不保存空选区，避免隐藏光标" }
+                    ]
+                  }
+                },
+                {
+                  "id": "toolbar-flow",
+                  "class": "topic",
+                  "title": "Canvas 工具栏链路",
+                  "children": {
+                    "attached": [
+                      { "id": "toolbar-layout", "class": "topic", "title": "richToolbarLayout 根据配置生成按钮矩形" },
+                      { "id": "toolbar-render", "class": "topic", "title": "richToolbarRenderer 绘制 hover/active/disabled 状态" },
+                      { "id": "toolbar-hit", "class": "topic", "title": "鼠标坐标命中 ToolbarCommand" },
+                      { "id": "toolbar-command", "class": "topic", "title": "handleToolbarCommand 调用保存、重置、格式、对齐或缩放命令" }
+                    ]
+                  }
+                }
+              ]
+            }
+          },
+          {
+            "id": "pagination-scroll",
+            "class": "topic",
+            "title": "6. 分页与自动滚动实现思路",
+            "children": {
+              "attached": [
+                { "id": "page-layout", "class": "topic", "title": "layoutRichTextDocument 根据页面高度和 pageGap 计算 pages 与 layout.height" },
+                { "id": "canvas-size", "class": "topic", "title": "renderRichTextDocument 同步 canvas.width/height 和 CSS width/height，兼容 zoom 和 DPR" },
+                { "id": "draw-all-pages", "class": "topic", "title": "renderer 按页绘制白纸、阴影、边框和页码" },
+                { "id": "caret-rect", "class": "topic", "title": "useRichCanvasRendering 调用 getRichCursorRect 得到光标几何位置" },
+                { "id": "scroll-ref", "class": "topic", "title": "RichCanvasWordSurface 持有 rich-canvas-scroller 的 scrollerRef" },
+                { "id": "auto-scroll", "class": "topic", "title": "当 caret 超出可视区域上下边界时调整 scroller.scrollTop" },
+                { "id": "no-jump", "class": "topic", "title": "只在接近不可见区域时滚动，避免普通输入时视图频繁跳动" }
+              ]
+            }
+          },
+          {
+            "id": "clipboard-history-persistence",
+            "class": "topic",
+            "title": "7. 剪贴板、撤销重做与持久化",
+            "children": {
+              "attached": [
+                {
+                  "id": "clipboard",
+                  "class": "topic",
+                  "title": "剪贴板",
+                  "children": {
+                    "attached": [
+                      { "id": "normalize-selection", "class": "topic", "title": "复制前归一化 selection，得到 start/end" },
+                      { "id": "slice", "class": "topic", "title": "生成 RichTextClipboardSlice，保留内部 run 格式" },
+                      { "id": "write-html", "class": "topic", "title": "写入 text/html，便于外部应用保留基础格式" },
+                      { "id": "write-plain", "class": "topic", "title": "写入 text/plain，保证兼容性" },
+                      { "id": "paste-priority", "class": "topic", "title": "粘贴优先内部 slice，其次外部 HTML，最后纯文本" }
+                    ]
+                  }
+                },
+                {
+                  "id": "history",
+                  "class": "topic",
+                  "title": "撤销重做",
+                  "children": {
+                    "attached": [
+                      { "id": "snapshot", "class": "topic", "title": "快照保存 document、cursor、selection、activeMarks" },
+                      { "id": "past-future", "class": "topic", "title": "past/future 双栈模型" },
+                      { "id": "commit-history", "class": "topic", "title": "每次 commitEdit 推入 past 并清空 future" },
+                      { "id": "restore-cursor", "class": "topic", "title": "撤销/重做恢复文档同时恢复光标和选区" }
+                    ]
+                  }
+                },
+                {
+                  "id": "persistence",
+                  "class": "topic",
+                  "title": "本地草稿持久化",
+                  "children": {
+                    "attached": [
+                      { "id": "saved-state", "class": "topic", "title": "保存结构：schemaVersion + document + savedAt" },
+                      { "id": "load-draft", "class": "topic", "title": "初始化优先读取 localStorage 草稿，坏数据回退示例文档" },
+                      { "id": "manual-save", "class": "topic", "title": "Save 按钮手动保存并显示 toast" },
+                      { "id": "auto-save", "class": "topic", "title": "编辑后 1.5 秒 debounce 自动保存" },
+                      { "id": "reset-doc", "class": "topic", "title": "Reset 删除草稿、恢复示例文档、清空历史" }
+                    ]
+                  }
+                }
+              ]
+            }
+          },
+          {
+            "id": "next-steps",
+            "class": "topic",
+            "title": "8. 后续演进实现思路",
+            "children": {
+              "attached": [
+                {
+                  "id": "readonly",
+                  "class": "topic",
+                  "title": "只读预览模式",
+                  "children": {
+                    "attached": [
+                      { "id": "readonly-disable-edit", "class": "topic", "title": "禁用输入代理、编辑键和格式命令" },
+                      { "id": "readonly-copy", "class": "topic", "title": "保留选区和复制能力" },
+                      { "id": "readonly-toolbar", "class": "topic", "title": "工具栏仅保留缩放和复制相关能力" }
+                    ]
+                  }
+                },
+                {
+                  "id": "search",
+                  "class": "topic",
+                  "title": "查找替换",
+                  "children": {
+                    "attached": [
+                      { "id": "text-index", "class": "topic", "title": "建立 document 到纯文本索引的映射" },
+                      { "id": "cross-run", "class": "topic", "title": "支持跨 run 匹配同一个关键词" },
+                      { "id": "highlight-rect", "class": "topic", "title": "把匹配范围映射为 layout rect 并绘制高亮" },
+                      { "id": "replace-command", "class": "topic", "title": "替换复用 selection 删除 + 插入命令" }
+                    ]
+                  }
+                },
+                {
+                  "id": "export",
+                  "class": "topic",
+                  "title": "导入导出",
+                  "children": {
+                    "attached": [
+                      { "id": "export-json", "class": "topic", "title": "JSON：后端保存和业务系统集成基础格式" },
+                      { "id": "export-text", "class": "topic", "title": "纯文本：兼容外部系统" },
+                      { "id": "export-html", "class": "topic", "title": "HTML：保留基础富文本格式" },
+                      { "id": "print-pdf", "class": "topic", "title": "后续扩展打印和 PDF" }
+                    ]
+                  }
+                },
+                {
+                  "id": "component-api",
+                  "class": "topic",
+                  "title": "可复用组件 API",
+                  "children": {
+                    "attached": [
+                      { "id": "value", "class": "topic", "title": "value/defaultValue：外部控制文档" },
+                      { "id": "on-change", "class": "topic", "title": "onChange：向业务层同步文档变化" },
+                      { "id": "on-save", "class": "topic", "title": "onSave：接入后端保存" },
+                      { "id": "toolbar-config-api", "class": "topic", "title": "toolbarConfig：按业务场景裁剪工具栏" },
+                      { "id": "readonly-api", "class": "topic", "title": "readonly/autoSave：业务参数化" }
+                    ]
+                  }
+                }
+              ]
+            }
+          }
+        ]
+      }
+    }
+  }
+]

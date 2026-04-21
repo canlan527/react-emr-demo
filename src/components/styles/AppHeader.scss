@@ -1,0 +1,23 @@
+.top-strip {
+  @apply flex flex-col justify-between gap-5 rounded-lg bg-white p-5 shadow-panel lg:flex-row lg:items-center;
+}
+
+.brand-lockup {
+  @apply flex min-w-0 items-center gap-4;
+}
+
+.brand-image {
+  @apply h-20 w-28 shrink-0 rounded-lg object-cover;
+}
+
+.route-tabs {
+  @apply flex flex-wrap gap-2;
+}
+
+.route-tab {
+  @apply inline-flex h-11 items-center justify-center rounded-lg border border-clinical-line bg-white px-5 text-sm font-bold text-clinical-muted transition hover:bg-clinical-surface;
+}
+
+.route-tab.active {
+  @apply border-clinical-pulse bg-clinical-pulse text-white;
+}

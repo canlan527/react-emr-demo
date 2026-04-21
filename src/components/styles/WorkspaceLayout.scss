@@ -1,0 +1,7 @@
+.workspace-layout {
+  @apply grid gap-5 lg:grid-cols-[220px_minmax(0,1fr)] xl:grid-cols-[240px_minmax(0,1fr)];
+}
+
+.workspace-content {
+  @apply grid min-w-0 gap-5;
+}

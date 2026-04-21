@@ -1,0 +1,34 @@
+.emr-toast {
+  @apply absolute left-1/2 top-20 z-[60] -translate-x-1/2 rounded-lg bg-clinical-ink px-5 py-3 text-sm font-bold text-white shadow-panel;
+}
+
+.rich-canvas-surface {
+  @apply relative rounded-b-lg border-x border-b border-clinical-line bg-[#dfe8ee];
+}
+
+.rich-canvas-scroller {
+  @apply relative max-h-[760px] overflow-auto p-5;
+
+  canvas {
+    @apply mx-auto block;
+
+    &:focus {
+      @apply outline-none;
+    }
+  }
+}
+
+.rich-canvas-ime-input {
+  @apply absolute z-10 h-7 w-80 resize-none overflow-hidden border-0 bg-transparent p-0 opacity-0 outline-none;
+  caret-color: transparent;
+  color: transparent;
+  font-family: "PingFang SC", "Microsoft YaHei", Arial, sans-serif;
+  font-size: 16px;
+  line-height: 28px;
+  pointer-events: none;
+}
+
+.rich-canvas-ime-input.is-composing {
+  @apply opacity-0;
+  color: transparent;
+}

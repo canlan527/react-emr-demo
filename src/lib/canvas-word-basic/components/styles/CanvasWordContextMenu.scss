@@ -1,0 +1,11 @@
+.emr-context-menu {
+  @apply fixed z-50 grid min-w-48 gap-1 rounded-lg border border-clinical-line bg-white p-2 text-sm shadow-panel;
+
+  button {
+    @apply flex items-center justify-between gap-5 rounded-md px-3 py-2 text-left font-bold text-clinical-ink hover:bg-clinical-surface disabled:cursor-not-allowed disabled:opacity-40;
+  }
+
+  span {
+    @apply text-xs font-normal text-clinical-muted;
+  }
+}

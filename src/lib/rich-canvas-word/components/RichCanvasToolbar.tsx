@@ -2,6 +2,7 @@ import { MouseEvent, useEffect, useRef, useState } from 'react';
 import { hitTestRichToolbar, layoutRichToolbar } from '../layout/richToolbarLayout';
 import { renderRichToolbar } from '../layout/richToolbarRenderer';
 import type { ToolbarCommand, ToolbarItem, ToolbarItemLayout } from '../richTypes';
+import './styles/RichCanvasToolbar.scss';
 
 // Canvas 工具栏组件负责三件事：
 // 1. 调用 renderer 绘制按钮。

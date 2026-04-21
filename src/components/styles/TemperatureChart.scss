@@ -1,0 +1,165 @@
+.chart-wrap {
+  @apply relative w-full overflow-x-auto rounded-lg border border-clinical-line bg-white;
+}
+
+.temperature-svg {
+  @apply block min-w-[760px] w-full;
+}
+
+.temp-zone {
+  text {
+    fill: #68768b;
+    font-size: 12px;
+    font-weight: 800;
+  }
+}
+
+.zone-cool {
+  fill: #ecf6ff;
+}
+
+.zone-normal {
+  fill: #f2fbf5;
+}
+
+.zone-low-fever {
+  fill: #fff7df;
+}
+
+.zone-high-fever {
+  fill: #fff0f0;
+}
+
+.grid-line {
+  stroke: #e4eaf2;
+  stroke-width: 1;
+}
+
+.grid-line.strong {
+  stroke: #c6d0df;
+}
+
+.time-line {
+  stroke: #eef1f5;
+  stroke-width: 1;
+}
+
+.time-line.day-start {
+  stroke: #aebbd0;
+  stroke-width: 1.4;
+}
+
+.reference-line {
+  stroke: #d64545;
+  stroke-dasharray: 6 6;
+  stroke-width: 1.5;
+}
+
+.reference-label {
+  fill: #b93030;
+  font-size: 12px;
+  font-weight: 900;
+}
+
+.vital-line {
+  fill: none;
+  stroke-linejoin: round;
+  stroke-linecap: round;
+  stroke-width: 2.6;
+}
+
+.temp-line {
+  stroke: #9b3d3d;
+}
+
+.pulse-line {
+  stroke: #1f7a8c;
+  stroke-dasharray: 7 7;
+}
+
+.bp-bar {
+  fill: #2878d0;
+  opacity: 0.72;
+}
+
+.chart-point {
+  stroke: #ffffff;
+  stroke-width: 1.7;
+}
+
+.temp-point.oral {
+  fill: #d64545;
+}
+
+.temp-point.axillary {
+  fill: #2878d0;
+}
+
+.temp-point.rectal {
+  fill: #2f855a;
+}
+
+.pulse-point {
+  fill: #1f7a8c;
+}
+
+.event-marker {
+  path {
+    fill: #7d5bd1;
+    stroke: #ffffff;
+    stroke-width: 1.2;
+  }
+
+  text {
+    fill: #5f43a8;
+    font-size: 12px;
+    font-weight: 800;
+    text-anchor: middle;
+  }
+}
+
+.axis {
+  color: #5d6b82;
+  font-size: 12px;
+
+  path,
+  line {
+    stroke: #9aa9bd;
+  }
+}
+
+.axis-title {
+  fill: #172033;
+  font-size: 13px;
+  font-weight: 800;
+}
+
+.time-label,
+.day-label,
+.row-label {
+  fill: #5d6b82;
+  font-size: 12px;
+  font-weight: 700;
+  text-anchor: middle;
+}
+
+.row-label {
+  text-anchor: start;
+}
+
+.hover-target {
+  fill: transparent;
+  outline: none;
+}
+
+.chart-tooltip {
+  @apply pointer-events-none absolute z-10 flex w-56 flex-col gap-1 rounded-lg border border-clinical-line bg-white/95 p-3 text-xs text-clinical-muted shadow-panel backdrop-blur;
+
+  strong {
+    @apply text-sm text-clinical-ink;
+  }
+
+  em {
+    @apply not-italic text-clinical-fever;
+  }
+}

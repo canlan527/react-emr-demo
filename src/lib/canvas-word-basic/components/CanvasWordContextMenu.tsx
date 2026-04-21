@@ -9,6 +9,8 @@
  * - 判断当前是否有选区。
  * - 操作编辑器状态、剪贴板或历史栈。
  */
+import './styles/CanvasWordContextMenu.scss';
+
 type CanvasWordContextMenuProps = {
   x: number;
   y: number;

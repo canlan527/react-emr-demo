@@ -1,0 +1,11 @@
+.emr-panel {
+  @apply rounded-lg bg-white p-4 shadow-panel sm:p-5;
+}
+
+.emr-toolbar {
+  @apply mb-4 flex flex-col justify-between gap-4 lg:flex-row lg:items-end;
+}
+
+.emr-actions {
+  @apply flex flex-wrap items-center gap-3 text-sm font-bold text-clinical-muted;
+}

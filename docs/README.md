@@ -24,6 +24,8 @@
   - 记录 rich-canvas-word v1 的详细规划，包括 Canvas 工具栏、block + run 文档模型、目录结构、IME 代理和分阶段实现计划。
 - [10-rich-canvas-word-next-plan.md](./10-rich-canvas-word-next-plan.md)
   - 记录 rich-canvas-word v1 核心链路完成后的产品化能力、文档持久化、分页滚动跟随、只读模式、查找替换和导入导出规划。
+- [11-emr-rich-canvas-word-mindmap.md](./11-emr-rich-canvas-word-mindmap.md)
+  - 用 Mermaid 思维导图梳理电子病历、canvas-word-basic 和 rich-canvas-word 的模块关系、数据流、编辑链路和演进边界。
 
 ## 当前项目定位
 
@@ -60,3 +62,4 @@
 5. 若要做富文本工具栏、规划 Canvas Word 版本演进或拆分目录，读 [07-canvas-word-version-roadmap.md](./07-canvas-word-version-roadmap.md)。
 6. 若要拆分 `CanvasWordRecord.tsx`，按 [08-canvas-word-record-refactor-plan.md](./08-canvas-word-record-refactor-plan.md) 分阶段推进。
 7. 若要开始实现富文本 v1，读 [09-rich-canvas-word-v1-plan.md](./09-rich-canvas-word-v1-plan.md)。
+8. 若要快速建立电子病历和 rich-canvas-word 的全局图景，读 [11-emr-rich-canvas-word-mindmap.md](./11-emr-rich-canvas-word-mindmap.md)。
