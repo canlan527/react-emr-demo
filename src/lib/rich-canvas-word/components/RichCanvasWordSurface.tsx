@@ -3,7 +3,7 @@ import { useRichCanvasCompositionHandlers } from '../hooks/useRichCanvasComposit
 import { useRichCanvasKeyboardHandlers } from '../hooks/useRichCanvasKeyboardHandlers';
 import { useRichCanvasPointerHandlers } from '../hooks/useRichCanvasPointerHandlers';
 import { useRichCanvasRendering } from '../hooks/useRichCanvasRendering';
-import type { RichTextDocument, RichTextFormatCommand, RichTextPosition, RichTextSelection } from '../richTypes';
+import type { RichTextDocument, RichTextFormatCommand, RichTextPosition, RichTextSearchMatch, RichTextSelection } from '../richTypes';
 import './styles/RichCanvasWordSurface.scss';
 
 // 正文 Surface 负责 DOM 事件和 Canvas 编辑体验的桥接。
@@ -18,6 +18,9 @@ type RichCanvasWordSurfaceProps = {
   focusRequest: number;
   selection: RichTextSelection | null;
   toast: string;
+  readonly: boolean;
+  searchActiveIndex: number;
+  searchMatches: RichTextSearchMatch[];
   zoom: number;
   onCancelSelection: () => void;
   onCopySelection: () => void;
@@ -40,6 +43,9 @@ export function RichCanvasWordSurface({
   focusRequest,
   selection,
   toast,
+  readonly,
+  searchActiveIndex,
+  searchMatches,
   zoom,
   onCancelSelection,
   onCopySelection,
@@ -66,14 +72,18 @@ export function RichCanvasWordSurface({
     latestCursorRef,
     latestSelectionRef,
     onInsertText,
+    readonly,
   });
   const { canvasRef, focusInput, layout } = useRichCanvasRendering({
     compositionText: compositionHandlers.compositionText,
     cursor,
     document,
     focusRequest,
+    hideCursor: readonly,
     inputRef,
     scrollerRef,
+    searchActiveIndex,
+    searchMatches,
     selection,
     zoom,
   });
@@ -117,11 +127,12 @@ export function RichCanvasWordSurface({
     onSelectionChange,
     onSplitBlock,
     onUndo,
+    readonly,
     selection,
   });
 
   return (
-    <div className="rich-canvas-surface" aria-label="富文本正文画布">
+    <div className={`rich-canvas-surface${readonly ? ' is-readonly' : ''}`} aria-label="富文本正文画布">
       {toast ? <div className="emr-toast">{toast}</div> : null}
       <div ref={scrollerRef} className="rich-canvas-scroller">
         <textarea
@@ -131,6 +142,8 @@ export function RichCanvasWordSurface({
           autoCapitalize="off"
           autoComplete="off"
           autoCorrect="off"
+          readOnly={readonly}
+          aria-readonly={readonly}
           spellCheck={false}
           onCompositionEnd={compositionHandlers.handleCompositionEnd}
           onCompositionStart={compositionHandlers.handleCompositionStart}

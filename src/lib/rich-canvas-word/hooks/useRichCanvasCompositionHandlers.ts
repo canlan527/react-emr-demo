@@ -12,6 +12,7 @@ type UseRichCanvasCompositionHandlersOptions = {
   latestCursorRef: RefObject<RichTextPosition | null>;
   latestSelectionRef: RefObject<RichTextSelection | null>;
   onInsertText: (value: string, cursor: RichTextPosition | null, selection: RichTextSelection | null) => void;
+  readonly: boolean;
 };
 
 export function useRichCanvasCompositionHandlers({
@@ -20,6 +21,7 @@ export function useRichCanvasCompositionHandlers({
   latestCursorRef,
   latestSelectionRef,
   onInsertText,
+  readonly,
 }: UseRichCanvasCompositionHandlersOptions) {
   const [isComposing, setIsComposing] = useState(false);
   const [compositionText, setCompositionText] = useState('');
@@ -33,6 +35,11 @@ export function useRichCanvasCompositionHandlers({
 
   // 非 IME 普通输入直接提交 textarea 当前 value。
   const handleInput = (event: FormEvent<HTMLTextAreaElement>) => {
+    if (readonly) {
+      resetInputValue();
+      return;
+    }
+
     if (composingRef.current) {
       return;
     }
@@ -46,16 +53,32 @@ export function useRichCanvasCompositionHandlers({
 
   // composition 开始后，键盘快捷键应暂停处理，避免拼音输入中 Backspace/Enter 被误当编辑命令。
   const handleCompositionStart = () => {
+    if (readonly) {
+      return;
+    }
+
     composingRef.current = true;
     setIsComposing(true);
     setCompositionText('');
   };
 
   const handleCompositionUpdate = (event: CompositionEvent<HTMLTextAreaElement>) => {
+    if (readonly) {
+      return;
+    }
+
     setCompositionText(event.data || event.currentTarget.value);
   };
 
   const handleCompositionEnd = (event: CompositionEvent<HTMLTextAreaElement>) => {
+    if (readonly) {
+      composingRef.current = false;
+      setIsComposing(false);
+      setCompositionText('');
+      resetInputValue();
+      return;
+    }
+
     composingRef.current = false;
     setIsComposing(false);
     const value = event.data || event.currentTarget.value;

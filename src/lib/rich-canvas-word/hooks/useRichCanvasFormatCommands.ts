@@ -16,6 +16,8 @@ import type {
   RichTextMarks,
   RichTextPosition,
   RichTextSelection,
+  ToolbarCommand,
+  ToolbarItem,
 } from '../richTypes';
 
 // 工具栏/格式命令 hook。
@@ -36,29 +38,61 @@ function getNextFontSize(currentFontSize: number | undefined) {
   return richFontSizeOptions[(currentIndex + 1) % richFontSizeOptions.length] ?? 16;
 }
 
+function getConfiguredToolbarItems(commands: ToolbarCommand[] | undefined): ToolbarItem[] {
+  if (!commands) {
+    return richToolbarItems;
+  }
+
+  const commandSet = new Set(commands);
+  const filteredItems = richToolbarItems.filter((item) => item.type === 'separator' || commandSet.has(item.command));
+  const compactItems: ToolbarItem[] = [];
+
+  for (const item of filteredItems) {
+    const previousItem = compactItems[compactItems.length - 1];
+
+    if (item.type === 'separator' && (!previousItem || previousItem.type === 'separator')) {
+      continue;
+    }
+
+    compactItems.push(item);
+  }
+
+  if (compactItems[compactItems.length - 1]?.type === 'separator') {
+    compactItems.pop();
+  }
+
+  return compactItems;
+}
+
 type UseRichCanvasFormatCommandsOptions = {
   activeMarks: RichTextMarks;
+  canCopy: boolean;
   canRedo: boolean;
   canUndo: boolean;
   commitEdit: (nextDocument: RichTextDocument, nextCursor: RichTextPosition | null, nextSelection?: RichTextSelection | null) => void;
   cursor: RichTextPosition | null;
   document: RichTextDocument;
+  readonly: boolean;
   selection: RichTextSelection | null;
   setActiveMarks: Dispatch<SetStateAction<RichTextMarks>>;
   setToast: Dispatch<SetStateAction<string>>;
+  toolbarConfig?: ToolbarCommand[];
   zoom: number;
 };
 
 export function useRichCanvasFormatCommands({
   activeMarks,
+  canCopy,
   canRedo,
   canUndo,
   commitEdit,
   cursor,
   document,
+  readonly,
   selection,
   setActiveMarks,
   setToast,
+  toolbarConfig,
   zoom,
 }: UseRichCanvasFormatCommandsOptions) {
   // currentMarks 是工具栏显示的样式来源。
@@ -70,6 +104,7 @@ export function useRichCanvasFormatCommands({
     [activeMarks, cursor, currentPosition, document, selectionRange],
   );
   const currentAlign = useMemo(() => getRichTextAlignAtPosition(document, currentPosition), [currentPosition, document]);
+  const configuredToolbarItems = useMemo(() => getConfiguredToolbarItems(toolbarConfig), [toolbarConfig]);
 
   // 判断按钮是否处于激活状态。对循环型命令来说，有值即 active。
   const hasActiveMark = (command: RichTextFormatCommand) => {
@@ -99,7 +134,7 @@ export function useRichCanvasFormatCommands({
   // 将静态 toolbar config 与当前编辑状态合并，生成 Canvas toolbar 可直接绘制的数据。
   const toolbarItems = useMemo(
     () =>
-      richToolbarItems.map((item) => {
+      configuredToolbarItems.map((item) => {
         if (item.type === 'separator') {
           return item;
         }
@@ -132,11 +167,19 @@ export function useRichCanvasFormatCommands({
           color: item.command === 'textColor' ? currentMarks.color : item.command === 'backgroundColor' ? currentMarks.backgroundColor : undefined,
           active,
           disabled:
+            (item.command === 'copy' && !canCopy) ||
+            (readonly &&
+              item.command !== 'copy' &&
+              item.command !== 'exportJson' &&
+              item.command !== 'exportPlainText' &&
+              item.command !== 'exportPdf' &&
+              item.command !== 'printPreview' &&
+              item.command !== 'zoom') ||
             (item.command === 'undo' && !canUndo) ||
             (item.command === 'redo' && !canRedo),
         };
       }),
-    [canRedo, canUndo, currentAlign, currentMarks, zoom],
+    [canCopy, canRedo, canUndo, configuredToolbarItems, currentAlign, currentMarks, readonly, zoom],
   );
 
   // 无选区格式命令更新 activeMarks，影响后续输入，而不是立刻修改 document。

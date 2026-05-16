@@ -1,5 +1,17 @@
 .rich-canvas-word {
   @apply rounded-lg bg-white p-4 shadow-panel sm:p-5;
+
+  &.is-readonly {
+    @apply border border-clinical-line;
+  }
+}
+
+.rich-canvas-word-page {
+  @apply space-y-3;
+}
+
+.rich-canvas-word-mode {
+  @apply flex flex-wrap gap-2;
 }
 
 .rich-canvas-heading {
@@ -16,4 +28,25 @@
   span.is-dirty {
     @apply border-[#f59e0b] bg-[#fff7ed] text-[#b45309];
   }
+}
+
+.rich-canvas-search {
+  @apply mb-3 flex flex-wrap items-center gap-2 rounded-lg border border-clinical-line bg-clinical-surface p-3;
+
+  label {
+    @apply text-sm font-bold text-clinical-ink;
+  }
+
+  input {
+    @apply h-11 min-w-0 flex-1 rounded-lg border border-clinical-line bg-white px-3 text-sm text-clinical-ink outline-none transition focus:border-clinical-pulse;
+    min-width: 180px;
+  }
+
+  .btn {
+    @apply px-4;
+  }
+}
+
+.rich-canvas-search-count {
+  @apply inline-flex h-11 min-w-16 items-center justify-center rounded-lg border border-clinical-line bg-white px-3 text-sm font-bold text-clinical-muted;
 }

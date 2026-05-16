@@ -2,15 +2,18 @@ import { RefObject, useEffect, useRef, useState } from 'react';
 import { deleteRichTextSelection, insertTextAtRichPosition } from '../editing/richTextEditing';
 import { getRichCursorRect } from '../layout/richTextLayout';
 import { renderRichTextDocument } from '../layout/richTextRenderer';
-import type { RichTextDocument, RichTextLayoutResult, RichTextPosition, RichTextSelection } from '../richTypes';
+import type { RichTextDocument, RichTextLayoutResult, RichTextPosition, RichTextSearchMatch, RichTextSelection } from '../richTypes';
 
 type UseRichCanvasRenderingInput = {
   compositionText: string;
   cursor: RichTextPosition | null;
   document: RichTextDocument;
   focusRequest: number;
+  hideCursor: boolean;
   inputRef?: RefObject<HTMLTextAreaElement | null>;
   scrollerRef?: RefObject<HTMLDivElement | null>;
+  searchActiveIndex: number;
+  searchMatches: RichTextSearchMatch[];
   selection: RichTextSelection | null;
   zoom: number;
 };
@@ -26,8 +29,11 @@ export function useRichCanvasRendering({
   cursor,
   document,
   focusRequest,
+  hideCursor,
   inputRef: externalInputRef,
   scrollerRef,
+  searchActiveIndex,
+  searchMatches,
   selection,
   zoom,
 }: UseRichCanvasRenderingInput) {
@@ -50,15 +56,17 @@ export function useRichCanvasRendering({
       : null;
     const nextLayout = renderRichTextDocument({
       canvas: canvasRef.current,
-      cursor: preview?.cursor ?? cursor,
+      cursor: hideCursor && !selection ? null : preview?.cursor ?? cursor,
       document: preview?.document ?? document,
+      searchActiveIndex,
+      searchMatches,
       selection: compositionText ? null : selection,
       zoom,
     });
     if (nextLayout) {
       setLayout(nextLayout);
     }
-  }, [compositionText, cursor, document, selection, zoom]);
+  }, [compositionText, cursor, document, hideCursor, searchActiveIndex, searchMatches, selection, zoom]);
 
   useEffect(() => {
     const canvas = canvasRef.current;

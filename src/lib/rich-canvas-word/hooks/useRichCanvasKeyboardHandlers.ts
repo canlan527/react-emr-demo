@@ -44,6 +44,7 @@ type UseRichCanvasKeyboardHandlersOptions = {
   onSelectionChange: (selection: RichTextSelection | null) => void;
   onSplitBlock: (cursor: RichTextPosition | null, selection: RichTextSelection | null) => void;
   onUndo: () => void;
+  readonly: boolean;
   selection: RichTextSelection | null;
 };
 
@@ -67,6 +68,7 @@ export function useRichCanvasKeyboardHandlers({
   onSelectionChange,
   onSplitBlock,
   onUndo,
+  readonly,
   selection,
 }: UseRichCanvasKeyboardHandlersOptions) {
   // 统一处理光标移动和 Shift 扩展选区。
@@ -112,6 +114,9 @@ export function useRichCanvasKeyboardHandlers({
 
     if (isCommandKey && event.key.toLowerCase() === 'z') {
       event.preventDefault();
+      if (readonly) {
+        return;
+      }
       if (event.shiftKey) {
         onRedo();
       } else {
@@ -122,6 +127,9 @@ export function useRichCanvasKeyboardHandlers({
 
     if (isCommandKey && event.key.toLowerCase() === 'y') {
       event.preventDefault();
+      if (readonly) {
+        return;
+      }
       onRedo();
       return;
     }
@@ -138,12 +146,18 @@ export function useRichCanvasKeyboardHandlers({
 
     if (isCommandKey && event.key.toLowerCase() === 'b') {
       event.preventDefault();
+      if (readonly) {
+        return;
+      }
       onFormatCommand('bold');
       return;
     }
 
     if (isCommandKey && event.key.toLowerCase() === 'u') {
       event.preventDefault();
+      if (readonly) {
+        return;
+      }
       onFormatCommand('underline');
       return;
     }
@@ -156,12 +170,18 @@ export function useRichCanvasKeyboardHandlers({
 
     if (isCommandKey && event.key.toLowerCase() === 'x') {
       event.preventDefault();
+      if (readonly) {
+        return;
+      }
       onCutSelection();
       return;
     }
 
     if (isCommandKey && event.key.toLowerCase() === 'v') {
       event.preventDefault();
+      if (readonly) {
+        return;
+      }
       onPasteClipboard();
       return;
     }
@@ -214,18 +234,27 @@ export function useRichCanvasKeyboardHandlers({
 
     if (event.key === 'Backspace') {
       event.preventDefault();
+      if (readonly) {
+        return;
+      }
       onDeleteBefore(latestCursorRef.current, latestSelectionRef.current);
       return;
     }
 
     if (event.key === 'Delete') {
       event.preventDefault();
+      if (readonly) {
+        return;
+      }
       onDeleteAfter(latestCursorRef.current, latestSelectionRef.current);
       return;
     }
 
     if (event.key === 'Enter') {
       event.preventDefault();
+      if (readonly) {
+        return;
+      }
       onSplitBlock(latestCursorRef.current, latestSelectionRef.current);
       return;
     }

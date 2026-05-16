@@ -1,6 +1,6 @@
 import { getRichCursorRect, getRichSelectionRects, layoutRichTextDocument, richCanvasWordLayout } from './richTextLayout';
 import { normalizeRichTextSelection } from '../editing/richTextEditing';
-import type { RichTextDocument, RichTextPosition, RichTextSelection } from '../richTypes';
+import type { RichTextDocument, RichTextPosition, RichTextSearchMatch, RichTextSelection } from '../richTypes';
 
 // 正文 Canvas renderer。
 //
@@ -11,10 +11,20 @@ type RenderRichTextInput = {
   document: RichTextDocument;
   cursor: RichTextPosition | null;
   selection: RichTextSelection | null;
+  searchActiveIndex?: number;
+  searchMatches?: RichTextSearchMatch[];
   zoom: number;
 };
 
-export function renderRichTextDocument({ canvas, document, cursor, selection, zoom }: RenderRichTextInput) {
+export function renderRichTextDocument({
+  canvas,
+  document,
+  cursor,
+  selection,
+  searchActiveIndex = -1,
+  searchMatches = [],
+  zoom,
+}: RenderRichTextInput) {
   if (!canvas) {
     return;
   }
@@ -61,6 +71,18 @@ export function renderRichTextDocument({ canvas, document, cursor, selection, zo
 
   // 选区必须在文字之前绘制，避免高亮盖住文字。
   const activeSelection = normalizeRichTextSelection(document, selection);
+
+  searchMatches.forEach((match, index) => {
+    getRichSelectionRects(context, layout, document, match.selection).forEach((rect) => {
+      const isActive = index === searchActiveIndex;
+      context.fillStyle = isActive ? 'rgba(245, 158, 11, 0.42)' : 'rgba(250, 204, 21, 0.28)';
+      context.fillRect(rect.x, rect.y, rect.width, rect.height);
+      if (isActive) {
+        context.strokeStyle = 'rgba(180, 83, 9, 0.78)';
+        context.strokeRect(rect.x + 0.5, rect.y + 0.5, Math.max(1, rect.width - 1), Math.max(1, rect.height - 1));
+      }
+    });
+  });
 
   getRichSelectionRects(context, layout, document, selection).forEach((rect) => {
     context.fillStyle = 'rgba(37, 99, 235, 0.2)';

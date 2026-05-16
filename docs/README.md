@@ -26,6 +26,8 @@
   - 记录 rich-canvas-word v1 核心链路完成后的产品化能力、文档持久化、分页滚动跟随、只读模式、查找替换和导入导出规划。
 - [11-emr-rich-canvas-word-mindmap.md](./11-emr-rich-canvas-word-mindmap.md)
   - 用 Mermaid 思维导图梳理电子病历、canvas-word-basic 和 rich-canvas-word 的模块关系、数据流、编辑链路和演进边界。
+- [12-rich-canvas-word-stage-7-10-delivery.md](./12-rich-canvas-word-stage-7-10-delivery.md)
+  - 记录 rich-canvas-word 阶段 7-10 的交付内容、打印/PDF 踩坑和最终稳定方案、业务组件 API 与验收结果。
 
 ## 当前项目定位
 
@@ -49,6 +51,10 @@
 - 富文本 v1 已支持配置化字号、文字颜色和高亮色循环切换。
 - 页面主工作区已调整为左侧紧凑病历头 + 右侧内容区，电子病历和富文本编辑器首屏可展示更多正文内容。
 - 富文本 v1 已支持分页输入时自动滚动到光标附近。
+- 富文本 v1 已支持只读预览模式，禁用编辑输入并保留文本选择、复制和页面缩放。
+- 富文本 v1 已支持普通文本查找、匹配高亮、上一个/下一个跳转、替换当前项和全部替换。
+- 富文本 v1 已支持 JSON 和纯文本导出。
+- 富文本 v1 已支持页面内打印预览和浏览器打印保存 PDF。
 - 项目包管理器已切换为 pnpm。
 
 ## 接手建议
@@ -63,3 +69,4 @@
 6. 若要拆分 `CanvasWordRecord.tsx`，按 [08-canvas-word-record-refactor-plan.md](./08-canvas-word-record-refactor-plan.md) 分阶段推进。
 7. 若要开始实现富文本 v1，读 [09-rich-canvas-word-v1-plan.md](./09-rich-canvas-word-v1-plan.md)。
 8. 若要快速建立电子病历和 rich-canvas-word 的全局图景，读 [11-emr-rich-canvas-word-mindmap.md](./11-emr-rich-canvas-word-mindmap.md)。
+9. 若要了解最近阶段 7-10 的完整交付边界，读 [12-rich-canvas-word-stage-7-10-delivery.md](./12-rich-canvas-word-stage-7-10-delivery.md)。

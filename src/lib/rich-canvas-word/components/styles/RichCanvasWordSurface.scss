@@ -4,6 +4,10 @@
 
 .rich-canvas-surface {
   @apply relative rounded-b-lg border-x border-b border-clinical-line bg-[#dfe8ee];
+
+  &.is-readonly {
+    @apply bg-[#e8eef2];
+  }
 }
 
 .rich-canvas-scroller {

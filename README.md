@@ -22,6 +22,7 @@
   - 右键菜单和复制提示。
 - 文档规划：
   - 已规划富文本工具栏、富文本文档模型和后续分期边界。
+  - 富文本 v1 已支持草稿保存、自动保存、只读预览、普通文本查找、替换、JSON/纯文本导出、打印预览和浏览器保存 PDF。
 
 ## 技术栈
 
@@ -58,6 +59,7 @@ pnpm run preview
 - `/overview`：患者概览。
 - `/temperature`：体温单。
 - `/medical-record`：电子病历。
+- `/rich-canvas-word`：富文本 Canvas Word v1。
 
 ## 项目文档
 
@@ -68,4 +70,6 @@ pnpm run preview
 - [产品需求](./docs/01-product-requirements.md)
 - [技术架构](./docs/02-technical-architecture.md)
 - [Canvas 编辑器架构](./docs/05-canvas-editor-architecture.md)
-- [富文本工具栏计划](./docs/07-rich-text-toolbar-plan.md)
+- [Canvas Word 版本路线](./docs/07-canvas-word-version-roadmap.md)
+- [Rich Canvas Word 后续功能规划](./docs/10-rich-canvas-word-next-plan.md)
+- [Rich Canvas Word 阶段 7-10 交付记录](./docs/12-rich-canvas-word-stage-7-10-delivery.md)

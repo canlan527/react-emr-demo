@@ -4,7 +4,7 @@ import { OverviewSummary } from './OverviewSummary';
 import { TemperatureWorkspace } from './TemperatureWorkspace';
 import { WorkspaceLayout } from './WorkspaceLayout';
 import { CanvasWordRecord } from '../lib/canvas-word-basic/CanvasWordRecord';
-import { RichCanvasWordRecord } from '../lib/rich-canvas-word/RichCanvasWordRecord';
+import { RichCanvasWordRecord } from '../lib/rich-canvas-word';
 import { createRecord, createSampleRecords, patientInfo } from '../data/vitals';
 import type { VitalRecord } from '../data/vitals';
 import type { VitalFormState } from './TemperatureWorkspace';
@@ -136,7 +136,31 @@ export function MedicalRecordPage() {
 }
 
 export function RichCanvasWordPage() {
-  return <RichCanvasWordRecord />;
+  const [readonly, setReadonly] = useState(false);
+
+  return (
+    <div className="rich-canvas-word-page">
+      <div className="rich-canvas-word-mode">
+        <button
+          type="button"
+          className={`btn ${readonly ? 'btn-secondary' : 'btn-primary'}`}
+          onClick={() => setReadonly(false)}
+          aria-pressed={!readonly}
+        >
+          编辑模式
+        </button>
+        <button
+          type="button"
+          className={`btn ${readonly ? 'btn-primary' : 'btn-secondary'}`}
+          onClick={() => setReadonly(true)}
+          aria-pressed={readonly}
+        >
+          只读预览
+        </button>
+      </div>
+      <RichCanvasWordRecord readonly={readonly} />
+    </div>
+  );
 }
 
 function useNursingWorkspace(): NursingWorkspaceContext {

@@ -57,6 +57,12 @@ export type RichTextSelection = {
   focus: RichTextPosition;
 };
 
+export type RichTextSearchMatch = {
+  id: string;
+  selection: RichTextSelection;
+  text: string;
+};
+
 export type RichTextFormatCommand = 'bold' | 'underline' | 'fontSize' | 'textColor' | 'backgroundColor' | 'clearFormat';
 
 // fragment 是 layout 阶段生成的可绘制片段，通常对应某个 run 在某一视觉行上的一部分。
@@ -104,6 +110,11 @@ export type RichCursorRect = {
 export type ToolbarCommand =
   | 'undo'
   | 'redo'
+  | 'copy'
+  | 'exportJson'
+  | 'exportPlainText'
+  | 'exportPdf'
+  | 'printPreview'
   | 'bold'
   | 'underline'
   | 'fontSize'
