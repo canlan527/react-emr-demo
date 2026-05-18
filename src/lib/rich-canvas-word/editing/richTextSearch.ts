@@ -1,4 +1,5 @@
 import type { RichTextDocument, RichTextPosition, RichTextSearchMatch } from '../richTypes';
+import { isRichTextTextBlock } from '../document/richTextBlocks';
 import { insertTextAtRichPosition } from './richTextEditing';
 import { compareRichTextPositions } from './richTextPosition';
 import { deleteRichTextSelection, normalizeRichTextSelection } from './richTextSelection';
@@ -48,6 +49,10 @@ export function findRichTextMatches(document: RichTextDocument, rawQuery: string
   }
 
   return document.blocks.flatMap((block) => {
+    if (!isRichTextTextBlock(block)) {
+      return [];
+    }
+
     const characters = getIndexedBlockText(block);
     const searchableChars = characters.map((item) => item.char.toLocaleLowerCase());
     const matches: RichTextSearchMatch[] = [];

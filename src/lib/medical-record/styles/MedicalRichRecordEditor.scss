@@ -1,0 +1,23 @@
+.medical-rich-record {
+  @apply space-y-3;
+}
+
+.medical-rich-record-panel {
+  @apply flex flex-col justify-between gap-3 rounded-lg border border-clinical-line bg-white p-4 shadow-panel lg:flex-row lg:items-end;
+
+  h2 {
+    @apply mt-1 text-2xl font-bold text-clinical-ink;
+  }
+
+  p:not(.eyebrow) {
+    @apply mt-1 text-sm font-medium text-clinical-muted;
+  }
+}
+
+.medical-rich-record-actions {
+  @apply flex flex-wrap items-center gap-2;
+
+  span {
+    @apply inline-flex h-11 items-center rounded-lg border border-clinical-line bg-clinical-surface px-3 text-sm font-bold text-clinical-muted;
+  }
+}

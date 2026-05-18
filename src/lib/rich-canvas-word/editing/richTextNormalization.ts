@@ -1,4 +1,5 @@
-import type { RichTextDocument, RichTextMarks, RichTextPosition, RichTextRun } from '../richTypes';
+import type { RichTextDocument, RichTextMarks, RichTextPosition, RichTextRun, RichTextTextBlock } from '../richTypes';
+import { isRichTextTextBlock } from '../document/richTextBlocks';
 import { clampOffset, findBlockAndRun } from './richTextPosition';
 
 // 编辑命令的标准返回值：新的 document 和新的 cursor。
@@ -67,8 +68,8 @@ export function cleanMarks(marks: RichTextMarks): RichTextMarks {
 }
 
 // 格式命令会把 run 切碎；归一化时把相邻同样式 run 合并回来，降低后续 layout 成本。
-export function mergeAdjacentRuns(runs: RichTextDocument['blocks'][number]['runs']) {
-  const merged = runs.reduce<RichTextDocument['blocks'][number]['runs']>((items, run) => {
+export function mergeAdjacentRuns(runs: RichTextRun[]) {
+  const merged = runs.reduce<RichTextRun[]>((items, run) => {
     if (run.text.length === 0 && runs.length > 1) {
       return items;
     }
@@ -89,7 +90,7 @@ export function mergeAdjacentRuns(runs: RichTextDocument['blocks'][number]['runs
 // 把 run 内 position 转成 block 内绝对 offset。run id 变化前先保存这个 offset。
 export function getBlockOffsetForPosition(document: RichTextDocument, position: RichTextPosition | null) {
   const { block, runIndex, run } = findBlockAndRun(document, position);
-  if (!block || !run) {
+  if (!block || !run || !isRichTextTextBlock(block)) {
     return null;
   }
 
@@ -103,7 +104,7 @@ export function getBlockOffsetForPosition(document: RichTextDocument, position: 
 // 根据 block 内绝对 offset 重新找到 run/offset，通常用于归一化后的 cursor 修复。
 export function getPositionAtBlockOffset(document: RichTextDocument, blockId: string, offset: number): RichTextPosition | null {
   const block = document.blocks.find((item) => item.id === blockId);
-  if (!block) {
+  if (!block || !isRichTextTextBlock(block)) {
     return null;
   }
 
@@ -129,10 +130,14 @@ export function getPositionAtBlockOffset(document: RichTextDocument, blockId: st
 export function normalizeRichTextDocument(document: RichTextDocument) {
   return {
     ...document,
-    blocks: document.blocks.map((block) => ({
-      ...block,
-      runs: mergeAdjacentRuns(block.runs),
-    })),
+    blocks: document.blocks.map((block) =>
+      isRichTextTextBlock(block)
+        ? {
+            ...block,
+            runs: mergeAdjacentRuns(block.runs),
+          }
+        : block,
+    ),
   };
 }
 
@@ -155,7 +160,7 @@ export function normalizeDocumentAndCursor(
 }
 
 // 空段落也需要一个 run 来承载光标和后续输入样式。
-export function createEmptyRun(sourceRunId: string, marks: RichTextDocument['blocks'][number]['runs'][number]['marks']) {
+export function createEmptyRun(sourceRunId: string, marks: RichTextMarks) {
   return {
     id: createRunId(sourceRunId),
     text: '',
@@ -165,8 +170,8 @@ export function createEmptyRun(sourceRunId: string, marks: RichTextDocument['blo
 
 // 保证 block 至少有一个 run，避免删除/粘贴后出现无法定位光标的空 block。
 export function ensureRuns(
-  block: RichTextDocument['blocks'][number],
-  fallbackRun: RichTextDocument['blocks'][number]['runs'][number],
+  block: RichTextTextBlock,
+  fallbackRun: RichTextRun,
 ) {
   return block.runs.length > 0 ? block.runs : [{ ...fallbackRun, id: createRunId(fallbackRun.id), text: '' }];
 }

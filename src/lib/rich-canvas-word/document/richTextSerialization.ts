@@ -1,4 +1,5 @@
 import type { RichTextDocument } from '../richTypes';
+import { getRichTextBlockPlainText } from './richTextBlocks';
 
 export type RichCanvasWordExportState = {
   schemaVersion: 1;
@@ -7,7 +8,7 @@ export type RichCanvasWordExportState = {
 };
 
 export function serializeRichTextDocumentToPlainText(document: RichTextDocument) {
-  return document.blocks.map((block) => block.runs.map((run) => run.text).join('')).join('\n');
+  return document.blocks.map(getRichTextBlockPlainText).join('\n');
 }
 
 export function serializeRichTextDocumentToJson(document: RichTextDocument) {

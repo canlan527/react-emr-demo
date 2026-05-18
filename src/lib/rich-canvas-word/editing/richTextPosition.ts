@@ -1,4 +1,5 @@
 import type { RichTextDocument, RichTextPosition } from '../richTypes';
+import { isRichTextTextBlock } from '../document/richTextBlocks';
 
 // position helper 是 editing/layout 的最低层工具。
 // 它只负责在 RichTextDocument 中定位 block/run/offset，不处理格式、选区或 React state。
@@ -10,7 +11,7 @@ export function clampOffset(value: number, text: string) {
 
 // 按 document 顺序摊平 run。左右移动、跨 run 删除等线性编辑命令依赖这个顺序。
 export function getOrderedRuns(document: RichTextDocument) {
-  return document.blocks.flatMap((block) => block.runs.map((run) => ({ block, run })));
+  return document.blocks.flatMap((block) => (isRichTextTextBlock(block) ? block.runs.map((run) => ({ block, run })) : []));
 }
 
 // 返回用户感知字符的 offset 边界。Array.from 能避免中文、emoji 等被普通索引拆坏。
@@ -30,10 +31,14 @@ export function getTextBoundaries(text: string) {
 export function updateRunText(document: RichTextDocument, runId: string, updater: (text: string) => string) {
   return {
     ...document,
-    blocks: document.blocks.map((block) => ({
-      ...block,
-      runs: block.runs.map((run) => (run.id === runId ? { ...run, text: updater(run.text) } : run)),
-    })),
+    blocks: document.blocks.map((block) =>
+      isRichTextTextBlock(block)
+        ? {
+            ...block,
+            runs: block.runs.map((run) => (run.id === runId ? { ...run, text: updater(run.text) } : run)),
+          }
+        : block,
+    ),
   };
 }
 
@@ -41,8 +46,8 @@ export function updateRunText(document: RichTextDocument, runId: string, updater
 export function findBlockAndRun(document: RichTextDocument, position: RichTextPosition | null) {
   const blockIndex = position ? document.blocks.findIndex((block) => block.id === position.blockId) : -1;
   const block = blockIndex >= 0 ? document.blocks[blockIndex] : null;
-  const runIndex = block && position ? block.runs.findIndex((run) => run.id === position.runId) : -1;
-  const run = block && runIndex >= 0 ? block.runs[runIndex] : null;
+  const runIndex = block && position && isRichTextTextBlock(block) ? block.runs.findIndex((run) => run.id === position.runId) : -1;
+  const run = block && isRichTextTextBlock(block) && runIndex >= 0 ? block.runs[runIndex] : null;
 
   return { block, blockIndex, run, runIndex };
 }
@@ -62,8 +67,8 @@ export function compareRichTextPositions(document: RichTextDocument, left: RichT
   }
 
   const block = document.blocks[leftBlockIndex];
-  const leftRunIndex = block?.runs.findIndex((run) => run.id === left.runId) ?? -1;
-  const rightRunIndex = block?.runs.findIndex((run) => run.id === right.runId) ?? -1;
+  const leftRunIndex = block && isRichTextTextBlock(block) ? block.runs.findIndex((run) => run.id === left.runId) : -1;
+  const rightRunIndex = block && isRichTextTextBlock(block) ? block.runs.findIndex((run) => run.id === right.runId) : -1;
 
   if (leftRunIndex !== rightRunIndex) {
     return leftRunIndex - rightRunIndex;
@@ -74,9 +79,10 @@ export function compareRichTextPositions(document: RichTextDocument, left: RichT
 
 // 获取整篇文档的首尾逻辑位置，用于 Ctrl/Cmd+A 全选。
 export function getRichDocumentBoundaryPositions(document: RichTextDocument) {
-  const firstBlock = document.blocks[0];
+  const textBlocks = document.blocks.filter(isRichTextTextBlock);
+  const firstBlock = textBlocks[0];
   const firstRun = firstBlock?.runs[0];
-  const lastBlock = document.blocks[document.blocks.length - 1];
+  const lastBlock = textBlocks[textBlocks.length - 1];
   const lastRun = lastBlock?.runs[lastBlock.runs.length - 1];
 
   if (!firstBlock || !firstRun || !lastBlock || !lastRun) {

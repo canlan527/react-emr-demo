@@ -5,6 +5,8 @@
 // 3. ToolbarItem：Canvas 工具栏的配置和布局数据。
 
 export type RichTextAlign = 'left' | 'center' | 'right';
+export type RichTextTextBlockType = 'heading' | 'paragraph';
+export type RichTextBlockType = RichTextTextBlockType | 'table';
 
 // marks 是字符级样式。相邻 run 如果 marks 完全一致，可以安全合并。
 export type RichTextMarks = {
@@ -23,13 +25,40 @@ export type RichTextRun = {
   marks: RichTextMarks;
 };
 
-// block 表示段落级结构。当前 v1 只支持标题和段落，表格/图片等留给后续阶段。
-export type RichTextBlock = {
+export type RichTextBaseBlock<TType extends RichTextBlockType = RichTextBlockType> = {
   id: string;
-  type: 'heading' | 'paragraph';
+  type: TType;
+};
+
+// text block 表示当前可编辑的正文流块。V2 会在 RichTextBlock union 中继续加入 table/image/comment 等对象块。
+export type RichTextTextBlock<TType extends RichTextTextBlockType = RichTextTextBlockType> = RichTextBaseBlock<TType> & {
   align: RichTextAlign;
   runs: RichTextRun[];
 };
+
+export type RichTextHeadingBlock = RichTextTextBlock<'heading'>;
+export type RichTextParagraphBlock = RichTextTextBlock<'paragraph'>;
+
+export type RichTextTableCell = {
+  id: string;
+  align?: RichTextAlign;
+  runs: RichTextRun[];
+};
+
+export type RichTextTableRow = {
+  id: string;
+  cells: RichTextTableCell[];
+};
+
+export type RichTextTableBlock = RichTextBaseBlock<'table'> & {
+  align: RichTextAlign;
+  runs: RichTextRun[];
+  rows: RichTextTableRow[];
+  columnWidths?: number[];
+};
+
+// block 表示文档流中的顶层结构。V2 从 text block 扩展到 table block。
+export type RichTextBlock = RichTextHeadingBlock | RichTextParagraphBlock | RichTextTableBlock;
 
 export type RichTextDocument = {
   id: string;
@@ -55,6 +84,43 @@ export type RichTextPosition = {
 export type RichTextSelection = {
   anchor: RichTextPosition;
   focus: RichTextPosition;
+};
+
+export type RichTableCellSelection = {
+  tableBlockId: string;
+  cellId: string;
+  rowIndex: number;
+  cellIndex: number;
+  runId?: string;
+  offset?: number;
+};
+
+export type RichTableSelection =
+  | {
+      type: 'cells';
+      tableBlockId: string;
+      anchor: RichTableCellSelection;
+      focus: RichTableCellSelection;
+    }
+  | {
+      type: 'text';
+      tableBlockId: string;
+      cellId: string;
+      rowIndex: number;
+      cellIndex: number;
+      anchor: RichTableCellSelection;
+      focus: RichTableCellSelection;
+    };
+
+export type RichCanvasWordEditorHandle = {
+  focus: () => void;
+  getDocument: () => RichTextDocument;
+  getCursor: () => RichTextPosition | null;
+  getSelection: () => RichTextSelection | null;
+  insertText: (text: string) => void;
+  insertBlocks: (blocks: RichTextBlock[]) => void;
+  replaceSelection: (content: string | RichTextBlock[]) => void;
+  setDocument: (document: RichTextDocument) => void;
 };
 
 export type RichTextSearchMatch = {
@@ -94,8 +160,43 @@ export type RichLayoutLine = {
   lineIndex: number;
 };
 
+export type RichLayoutTableTextFragment = {
+  cellId: string;
+  runId: string;
+  text: string;
+  marks: RichTextMarks;
+  startOffset: number;
+  endOffset: number;
+  font: string;
+  x: number;
+  width: number;
+  baseline: number;
+};
+
+export type RichLayoutTableCell = {
+  cellIndex: number;
+  id: string;
+  x: number;
+  y: number;
+  width: number;
+  height: number;
+  fragments: RichLayoutTableTextFragment[];
+};
+
+export type RichLayoutTable = {
+  blockId: string;
+  cells: RichLayoutTableCell[];
+  x: number;
+  y: number;
+  width: number;
+  height: number;
+  page: number;
+  rowIndex: number;
+};
+
 export type RichTextLayoutResult = {
   lines: RichLayoutLine[];
+  tables: RichLayoutTable[];
   pages: number;
   width: number;
   height: number;

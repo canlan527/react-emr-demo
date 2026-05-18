@@ -1,4 +1,5 @@
-import type { RichTextDocument, RichTextPosition } from '../richTypes';
+import type { RichTextDocument, RichTextPosition, RichTextTextBlock } from '../richTypes';
+import { isRichTextTextBlock } from '../document/richTextBlocks';
 import { clampOffset, findBlockAndRun, getOrderedRuns, getTextBoundaries, updateRunText } from './richTextPosition';
 import { createBlockId, createEmptyRun, createRunId, type RichTextEditResult } from './richTextNormalization';
 
@@ -8,25 +9,25 @@ import { createBlockId, createEmptyRun, createRunId, type RichTextEditResult } f
 // - Enter 把当前 block 拆成两个 block。
 // 普通字符级删除仍按 run 的 Unicode 字符边界处理。
 
-function findLastTextRun(block: RichTextDocument['blocks'][number]) {
+function findLastTextRun(block: RichTextTextBlock) {
   return [...block.runs].reverse().find((run) => run.text.length > 0) ?? null;
 }
 
-function findFirstTextRun(block: RichTextDocument['blocks'][number]) {
+function findFirstTextRun(block: RichTextTextBlock) {
   return block.runs.find((run) => run.text.length > 0) ?? null;
 }
 
-function isEmptyBlock(block: RichTextDocument['blocks'][number]) {
+function isEmptyBlock(block: RichTextTextBlock) {
   return block.runs.every((run) => run.text.length === 0);
 }
 
-function getOnlyRun(block: RichTextDocument['blocks'][number]) {
+function getOnlyRun(block: RichTextTextBlock) {
   return block.runs[0];
 }
 
 function mergeRunsForBackspace(
-  previousBlock: RichTextDocument['blocks'][number],
-  currentBlock: RichTextDocument['blocks'][number],
+  previousBlock: RichTextTextBlock,
+  currentBlock: RichTextTextBlock,
 ) {
   if (isEmptyBlock(previousBlock) && isEmptyBlock(currentBlock)) {
     return [getOnlyRun(previousBlock) ?? getOnlyRun(currentBlock)].filter(Boolean);
@@ -44,8 +45,8 @@ function mergeRunsForBackspace(
 }
 
 function mergeRunsForDelete(
-  currentBlock: RichTextDocument['blocks'][number],
-  nextBlock: RichTextDocument['blocks'][number],
+  currentBlock: RichTextTextBlock,
+  nextBlock: RichTextTextBlock,
 ) {
   if (isEmptyBlock(currentBlock) && isEmptyBlock(nextBlock)) {
     return [getOnlyRun(currentBlock) ?? getOnlyRun(nextBlock)].filter(Boolean);
@@ -63,8 +64,8 @@ function mergeRunsForDelete(
 }
 
 function getBackspaceMergeCursor(
-  previousBlock: RichTextDocument['blocks'][number],
-  currentBlock: RichTextDocument['blocks'][number],
+  previousBlock: RichTextTextBlock,
+  currentBlock: RichTextTextBlock,
 ) {
   const previousRun = findLastTextRun(previousBlock);
   if (previousRun) {
@@ -76,8 +77,8 @@ function getBackspaceMergeCursor(
 }
 
 function getDeleteMergeCursor(
-  currentBlock: RichTextDocument['blocks'][number],
-  nextBlock: RichTextDocument['blocks'][number],
+  currentBlock: RichTextTextBlock,
+  nextBlock: RichTextTextBlock,
 ) {
   const currentRun = findLastTextRun(currentBlock);
   if (currentRun) {
@@ -95,9 +96,9 @@ export function deleteBeforeRichTextPosition(
 ): RichTextEditResult {
   // 光标位于 block 开头时，Backspace 合并到上一段；否则删除前一个字符。
   const { block, blockIndex, run, runIndex } = findBlockAndRun(document, position);
-  if (block && run && runIndex === 0 && clampOffset(position?.offset ?? 0, run.text) === 0) {
+  if (block && run && isRichTextTextBlock(block) && runIndex === 0 && clampOffset(position?.offset ?? 0, run.text) === 0) {
     const previousBlock = document.blocks[blockIndex - 1];
-    if (!previousBlock) {
+    if (!previousBlock || !isRichTextTextBlock(previousBlock)) {
       return { document, cursor: { blockId: block.id, runId: run.id, offset: 0 } };
     }
 
@@ -165,11 +166,12 @@ export function deleteAfterRichTextPosition(
   if (
     block &&
     run &&
+    isRichTextTextBlock(block) &&
     runIndex === block.runs.length - 1 &&
     clampOffset(position?.offset ?? 0, run.text) === run.text.length
   ) {
     const nextBlock = document.blocks[blockIndex + 1];
-    if (!nextBlock) {
+    if (!nextBlock || !isRichTextTextBlock(nextBlock)) {
       return { document, cursor: { blockId: block.id, runId: run.id, offset: run.text.length } };
     }
 
@@ -236,12 +238,13 @@ export function splitBlockAtRichTextPosition(
   // Enter 是硬换行：把当前 block 按 cursor 拆成两个 block。
   // 自动换行只存在于 layout 中，不会进入 document。
   const blockIndex = position ? document.blocks.findIndex((block) => block.id === position.blockId) : -1;
-  const block = blockIndex >= 0 ? document.blocks[blockIndex] : document.blocks[0];
-  const targetBlockIndex = blockIndex >= 0 ? blockIndex : 0;
-  const runIndex = block && position ? block.runs.findIndex((run) => run.id === position.runId) : -1;
+  const fallbackBlockIndex = document.blocks.findIndex(isRichTextTextBlock);
+  const block = blockIndex >= 0 ? document.blocks[blockIndex] : document.blocks[fallbackBlockIndex];
+  const targetBlockIndex = blockIndex >= 0 ? blockIndex : Math.max(0, fallbackBlockIndex);
+  const runIndex = block && isRichTextTextBlock(block) && position ? block.runs.findIndex((run) => run.id === position.runId) : -1;
   const run = runIndex >= 0 ? block.runs[runIndex] : block?.runs[0];
 
-  if (!block || !run) {
+  if (!block || !run || !isRichTextTextBlock(block)) {
     return { document, cursor: position ?? { blockId: '', runId: '', offset: 0 } };
   }
 

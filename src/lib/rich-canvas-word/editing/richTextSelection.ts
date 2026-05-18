@@ -1,5 +1,6 @@
-import type { RichTextDocument, RichTextSelection } from '../richTypes';
-import { clampOffset, compareRichTextPositions, findBlockAndRun, isSameRichTextPosition } from './richTextPosition';
+import type { RichTextDocument, RichTextRun, RichTextSelection, RichTextTextBlock } from '../richTypes';
+import { isRichTextTextBlock } from '../document/richTextBlocks';
+import { clampOffset, compareRichTextPositions, findBlockAndRun, getRichDocumentBoundaryPositions, isSameRichTextPosition } from './richTextPosition';
 import { createRunId, type RichTextEditResult } from './richTextNormalization';
 
 // selection helper 只处理“选区范围”语义：
@@ -27,11 +28,18 @@ export function extractRichTextSelectionPlainText(document: RichTextDocument, se
 
   const startInfo = findBlockAndRun(document, range.start);
   const endInfo = findBlockAndRun(document, range.end);
-  if (!startInfo.block || !startInfo.run || !endInfo.block || !endInfo.run) {
+  if (
+    !startInfo.block ||
+    !startInfo.run ||
+    !endInfo.block ||
+    !endInfo.run ||
+    !isRichTextTextBlock(startInfo.block) ||
+    !isRichTextTextBlock(endInfo.block)
+  ) {
     return '';
   }
 
-  const readBlockText = (block: RichTextDocument['blocks'][number], blockIndex: number) =>
+  const readBlockText = (block: RichTextTextBlock, blockIndex: number) =>
     block.runs
       .map((run, runIndex) => {
         if (blockIndex === startInfo.blockIndex && runIndex < startInfo.runIndex) {
@@ -50,6 +58,7 @@ export function extractRichTextSelectionPlainText(document: RichTextDocument, se
 
   return document.blocks
     .slice(startInfo.blockIndex, endInfo.blockIndex + 1)
+    .filter(isRichTextTextBlock)
     .map((block, index) => readBlockText(block, startInfo.blockIndex + index))
     .join('\n');
 }
@@ -63,11 +72,12 @@ export function deleteRichTextSelection(
 ): RichTextEditResult {
   const range = normalizeRichTextSelection(document, selection);
   if (!range) {
-    const fallbackBlock = document.blocks[0];
+    const fallback = getRichDocumentBoundaryPositions(document)?.start;
+    const fallbackBlock = document.blocks.find(isRichTextTextBlock);
     const fallbackRun = fallbackBlock?.runs[0];
     return {
       document,
-      cursor: {
+      cursor: fallback ?? {
         blockId: fallbackBlock?.id ?? '',
         runId: fallbackRun?.id ?? '',
         offset: 0,
@@ -80,22 +90,31 @@ export function deleteRichTextSelection(
   const startInfo = findBlockAndRun(document, start);
   const endInfo = findBlockAndRun(document, end);
 
-  if (!startInfo.block || !startInfo.run || !endInfo.block || !endInfo.run) {
+  if (
+    !startInfo.block ||
+    !startInfo.run ||
+    !endInfo.block ||
+    !endInfo.run ||
+    !isRichTextTextBlock(startInfo.block) ||
+    !isRichTextTextBlock(endInfo.block)
+  ) {
     return { document, cursor: start };
   }
 
+  const startBlock = startInfo.block;
+  const endBlock = endInfo.block;
   const startRun = startInfo.run;
   const endRun = endInfo.run;
   const startOffset = clampOffset(start.offset, startInfo.run.text);
   const endOffset = clampOffset(end.offset, endInfo.run.text);
 
   const ensureRuns = (
-    block: RichTextDocument['blocks'][number],
-    fallbackRun: RichTextDocument['blocks'][number]['runs'][number],
+    block: RichTextTextBlock,
+    fallbackRun: RichTextRun,
   ) => (block.runs.length > 0 ? block.runs : [{ ...fallbackRun, id: createRunId(fallbackRun.id), text: '' }]);
 
-  if (startInfo.block.id === endInfo.block.id) {
-    const nextRuns = startInfo.block.runs
+  if (startBlock.id === endBlock.id) {
+    const nextRuns = startBlock.runs
       .map((run, runIndex) => {
         if (runIndex < startInfo.runIndex || runIndex > endInfo.runIndex) {
           return run;
@@ -115,9 +134,9 @@ export function deleteRichTextSelection(
 
         return null;
       })
-      .filter((run): run is RichTextDocument['blocks'][number]['runs'][number] => Boolean(run));
+      .filter((run): run is RichTextRun => Boolean(run));
 
-    const nextBlock = { ...startInfo.block, runs: ensureRuns({ ...startInfo.block, runs: nextRuns }, startInfo.run) };
+    const nextBlock = { ...startBlock, runs: ensureRuns({ ...startBlock, runs: nextRuns }, startInfo.run) };
     return {
       document: {
         ...document,
@@ -128,16 +147,16 @@ export function deleteRichTextSelection(
   }
 
   const startRuns = [
-    ...startInfo.block.runs.slice(0, startInfo.runIndex),
+    ...startBlock.runs.slice(0, startInfo.runIndex),
     { ...startInfo.run, text: startInfo.run.text.slice(0, startOffset) },
   ];
   const endRuns = [
     { ...endInfo.run, text: endInfo.run.text.slice(endOffset) },
-    ...endInfo.block.runs.slice(endInfo.runIndex + 1),
+    ...endBlock.runs.slice(endInfo.runIndex + 1),
   ];
   const mergedBlock = {
-    ...startInfo.block,
-    runs: ensureRuns({ ...startInfo.block, runs: [...startRuns, ...endRuns] }, startInfo.run),
+    ...startBlock,
+    runs: ensureRuns({ ...startBlock, runs: [...startRuns, ...endRuns] }, startInfo.run),
   };
 
   return {

@@ -5,7 +5,10 @@ import type {
   RichTextPosition,
   RichTextRun,
   RichTextSelection,
+  RichTextTableBlock,
+  RichTextTextBlock,
 } from '../richTypes';
+import { getRichTextBlockPlainText, isRichTextTableBlock, isRichTextTextBlock } from '../document/richTextBlocks';
 import { clampOffset, findBlockAndRun } from './richTextPosition';
 import {
   cleanMarks,
@@ -34,7 +37,7 @@ export function richTextSliceToPlainText(slice: RichTextClipboardSlice | null) {
     return '';
   }
 
-  return slice.blocks.map((block) => block.runs.map((run) => run.text).join('')).join('\n');
+  return slice.blocks.map(getRichTextBlockPlainText).join('\n');
 }
 
 // 从当前 document 的选区中截取富文本 slice，保留 block/run/marks。
@@ -57,6 +60,10 @@ export function extractRichTextSelectionSlice(
     .slice(startInfo.blockIndex, endInfo.blockIndex + 1)
     .map((block, blockOffset) => {
       const blockIndex = startInfo.blockIndex + blockOffset;
+      if (!isRichTextTextBlock(block)) {
+        return null;
+      }
+
       const runs = block.runs
         .map((run, runIndex) => {
           if (blockIndex === startInfo.blockIndex && runIndex < startInfo.runIndex) {
@@ -78,17 +85,38 @@ export function extractRichTextSelectionSlice(
         ...block,
         runs: runs.length > 0 ? runs : [{ ...(block.runs[0] ?? startInfo.run), text: '', marks: cleanMarks((block.runs[0] ?? startInfo.run).marks) }],
       };
-    });
+    })
+    .filter((block): block is RichTextTextBlock => Boolean(block));
 
   return blocks.length > 0 ? { blocks } : null;
 }
 
-function cloneBlock(block: RichTextBlock, runs: RichTextRun[]): RichTextBlock {
+function cloneTextBlock(block: RichTextTextBlock, runs: RichTextRun[]): RichTextTextBlock {
   return {
     ...block,
     id: createBlockId(block.id),
     runs: runs.length > 0 ? runs : [createEmptyRun(block.runs[0]?.id ?? block.id, block.runs[0]?.marks ?? {})],
   };
+}
+
+function cloneTableBlock(block: RichTextTableBlock): RichTextTableBlock {
+  return {
+    ...block,
+    id: createBlockId(block.id),
+    rows: block.rows.map((row) => ({
+      ...row,
+      id: createBlockId(row.id),
+      cells: row.cells.map((cell) => ({
+        ...cell,
+        id: createBlockId(cell.id),
+        runs: cell.runs.map((run) => cloneRun(run)),
+      })),
+    })),
+  };
+}
+
+function cloneBlock(block: RichTextBlock): RichTextBlock {
+  return isRichTextTableBlock(block) ? cloneTableBlock(block) : cloneTextBlock(block, block.runs.map((run) => cloneRun(run)));
 }
 
 // 将富文本 slice 插入指定位置。多 block slice 会拆分当前 block，并把前后内容接到首尾 block。
@@ -103,7 +131,7 @@ export function insertRichTextSliceAtPosition(
   }
 
   const { block, blockIndex, run, runIndex } = findBlockAndRun(document, position);
-  if (!block || !run) {
+  if (!block || !run || !isRichTextTextBlock(block)) {
     return null;
   }
 
@@ -118,10 +146,11 @@ export function insertRichTextSliceAtPosition(
   ].filter((item): item is RichTextRun => Boolean(item));
 
   let cursorBeforeNormalize: RichTextPosition | null = null;
-  const clonedSliceBlocks = slice.blocks.map((sliceBlock) => cloneBlock(sliceBlock, sliceBlock.runs.map((sliceRun) => cloneRun(sliceRun))));
+  const clonedSliceBlocks = slice.blocks.map((sliceBlock) => cloneBlock(sliceBlock));
   const nextBlocks: RichTextBlock[] = [];
+  const containsObjectBlock = clonedSliceBlocks.some((sliceBlock) => !isRichTextTextBlock(sliceBlock));
 
-  if (clonedSliceBlocks.length === 1) {
+  if (clonedSliceBlocks.length === 1 && isRichTextTextBlock(clonedSliceBlocks[0])) {
     const insertedRuns = clonedSliceBlocks[0].runs;
     const mergedRuns = [...beforeRuns, ...insertedRuns, ...afterRuns];
     const cursorRun = insertedRuns[insertedRuns.length - 1] ?? beforeRuns[beforeRuns.length - 1] ?? afterRuns[0];
@@ -140,9 +169,12 @@ export function insertRichTextSliceAtPosition(
       },
       ...document.blocks.slice(blockIndex + 1),
     );
-  } else {
+  } else if (!containsObjectBlock && isRichTextTextBlock(clonedSliceBlocks[0]) && isRichTextTextBlock(clonedSliceBlocks[clonedSliceBlocks.length - 1])) {
     const firstInsertedBlock = clonedSliceBlocks[0];
     const lastInsertedBlock = clonedSliceBlocks[clonedSliceBlocks.length - 1];
+    if (!isRichTextTextBlock(firstInsertedBlock) || !isRichTextTextBlock(lastInsertedBlock)) {
+      return null;
+    }
     const middleBlocks = clonedSliceBlocks.slice(1, -1);
     const firstBlock = {
       ...block,
@@ -165,6 +197,30 @@ export function insertRichTextSliceAtPosition(
       firstBlock,
       ...middleBlocks,
       lastBlock,
+      ...document.blocks.slice(blockIndex + 1),
+    );
+  } else {
+    const beforeBlock = {
+      ...block,
+      runs: ensureRuns({ ...block, runs: beforeRuns }, run),
+    };
+    const afterBlock = {
+      ...block,
+      id: createBlockId(block.id),
+      runs: ensureRuns({ ...block, runs: afterRuns }, run),
+    };
+    const cursorRun = afterBlock.runs[0] ?? beforeBlock.runs[beforeBlock.runs.length - 1];
+    cursorBeforeNormalize = {
+      blockId: afterBlock.id,
+      runId: cursorRun.id,
+      offset: 0,
+    };
+
+    nextBlocks.push(
+      ...document.blocks.slice(0, blockIndex),
+      beforeBlock,
+      ...clonedSliceBlocks,
+      afterBlock,
       ...document.blocks.slice(blockIndex + 1),
     );
   }

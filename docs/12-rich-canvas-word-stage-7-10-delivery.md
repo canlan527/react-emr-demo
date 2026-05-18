@@ -11,7 +11,9 @@
 - 阶段 9：JSON/TXT 导出、打印预览、PDF 下载。
 - 阶段 10：业务组件 API 封装。
 
-本轮没有开始 DOCX 导出，也没有把 `medical-record` v0 页面切到 `rich-canvas-word`。这两个方向应作为后续独立阶段推进。
+本轮没有开始 DOCX 导出，也没有把 `medical-record` 业务层接入 `rich-canvas-word`。这两个方向在阶段 7-10 之后作为独立阶段推进。
+
+进度补充：阶段 11.1 已在后续开发中完成第一版业务接入，新增 `/medical-record-rich` 富文本电子病历 V1，并保留 `/word-basic` 作为 v0 纯文本基础版；旧 `/medical-record` 路径重定向到 `/word-basic`。
 
 ## 阶段 7：只读预览模式
 
@@ -240,7 +242,7 @@ pnpm run build
 
 建议下一阶段从以下方向选一个独立推进：
 
-- 做真实 EMR 业务包装层，把 `medical-record` 的结构化数据转换为 `RichTextDocument`。
+- 完善真实 EMR 业务包装层，把更多病历结构、模板、患者字段和业务命令接入 `MedicalRichRecordEditor`。
 - 做 DOCX 导出。
 - 做可选择文本的后端 PDF 渲染方案。
 - 做 `placeholder` 和空文档体验。

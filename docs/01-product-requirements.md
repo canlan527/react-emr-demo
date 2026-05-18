@@ -6,7 +6,7 @@
 
 ## 路由需求
 
-项目当前使用轻量 History API 路由，不引入 React Router。
+项目当前已使用 React Router 组织页面路由。
 
 已规划路由：
 
@@ -15,9 +15,15 @@
   - 默认主工作页面。
 - `/overview`
   - 病历概览页面。
+- `/medical-record-rich`
+  - 富文本电子病历 V1 页面。
+  - 内含 `MedicalRichRecordEditor`，把患者和生命体征业务数据转换为 `RichTextDocument`。
+- `/rich-canvas-word`
+  - 通用富文本 Canvas Word V1 demo 页面。
+- `/word-basic`
+  - 基础版 V0 纯文本 Canvas Word 页面。
 - `/medical-record`
-  - 查看电子病例/电子病历页面。
-  - 内含 Canvas Word 电子病历编辑器。
+  - 历史兼容路径，当前重定向到 `/word-basic`。
 
 ## 病历头需求
 
@@ -79,7 +85,7 @@
 
 ### 文档模型
 
-需要有初期文档模型和数据结构，当前在 `src/lib/medical-record/medicalRecordDocument.ts` 中实现：
+基础版 V0 的初期文档模型和数据结构在 `src/lib/medical-record/medicalRecordDocument.ts` 中实现：
 
 - `MedicalRecordDocument`
 - `MedicalRecordBlock`
@@ -133,6 +139,16 @@
   - Backspace
   - Delete
   - Escape
+
+### 富文本电子病历 V1
+
+当前富文本业务包装层在 `src/lib/medical-record/MedicalRichRecordEditor.tsx` 中实现：
+
+- 将 `patientInfo` 和体温单 `VitalRecord[]` 转换为 `RichTextDocument`。
+- 生成住院电子病历标题、患者字段、主诉、现病史、生命体征摘要、体格检查、诊疗计划、病程记录和签名。
+- 支持编辑病历和归档预览两种模式。
+- 支持同步体征，将当前体温单记录重新生成进业务文档。
+- 使用 `RichCanvasWordRecord` 的 `value/onChange/onSave/readonly/toolbarConfig` 接入通用富文本编辑器。
 
 ## UI 反馈需求
 

@@ -1,5 +1,6 @@
-import type { RichTextDocument, RichTextMarks, RichTextPosition } from '../richTypes';
-import { clampOffset } from './richTextPosition';
+import type { RichTextDocument, RichTextMarks, RichTextPosition, RichTextRun } from '../richTypes';
+import { isRichTextTextBlock } from '../document/richTextBlocks';
+import { clampOffset, getRichDocumentBoundaryPositions } from './richTextPosition';
 import {
   cleanMarks,
   createRunId,
@@ -53,15 +54,17 @@ export function insertTextAtRichPosition(
 ): RichTextEditResult {
   // marksOverride 只在无选区且 activeMarks 生效时传入。
   // 它会把插入文本切成独立 run，避免意外污染原 run 的已有文字样式。
-  const fallbackBlock = document.blocks[0];
+  const fallbackBlock = document.blocks.find(isRichTextTextBlock);
   const fallbackRun = fallbackBlock?.runs[0];
-  const targetRunId = position?.runId ?? fallbackRun?.id;
+  const fallbackPosition = getRichDocumentBoundaryPositions(document)?.start;
+  const targetRunId = position?.runId ?? fallbackPosition?.runId ?? fallbackRun?.id;
 
   if (!value || !targetRunId) {
     return {
       document,
       cursor:
         position ??
+        fallbackPosition ??
         ({
           blockId: fallbackBlock?.id ?? '',
           runId: fallbackRun?.id ?? '',
@@ -72,41 +75,48 @@ export function insertTextAtRichPosition(
 
   let nextCursor: RichTextPosition | null = null;
 
-  const blocks = document.blocks.map((block) => ({
-    ...block,
-    runs: block.runs.flatMap((run) => {
-      if (run.id !== targetRunId) {
-        return [run];
-      }
+  const blocks = document.blocks.map((block) => {
+    if (!isRichTextTextBlock(block)) {
+      return block;
+    }
 
-      const offset = clampOffset(position?.offset ?? 0, run.text);
-      const nextMarks = marksOverride ? { ...run.marks, ...marksOverride } : run.marks;
-      nextCursor = {
-        blockId: block.id,
-        runId: marksOverride ? createRunId(run.id) : run.id,
-        offset: marksOverride ? value.length : offset + value.length,
-      };
+    return {
+      ...block,
+      runs: block.runs.flatMap((run) => {
+        if (run.id !== targetRunId) {
+          return [run];
+        }
 
-      if (!marksOverride) {
+        const offset = clampOffset(position?.offset ?? 0, run.text);
+        const nextMarks = marksOverride ? { ...run.marks, ...marksOverride } : run.marks;
+        nextCursor = {
+          blockId: block.id,
+          runId: marksOverride ? createRunId(run.id) : run.id,
+          offset: marksOverride ? value.length : offset + value.length,
+        };
+
+        if (!marksOverride) {
+          return [
+            {
+              ...run,
+              text: `${run.text.slice(0, offset)}${value}${run.text.slice(offset)}`,
+            },
+          ];
+        }
+
+        const insertedRunId = nextCursor.runId;
         return [
-          {
-            ...run,
-            text: `${run.text.slice(0, offset)}${value}${run.text.slice(offset)}`,
-          },
-        ];
-      }
-
-      const insertedRunId = nextCursor.runId;
-      return [
-        offset > 0 ? { ...run, id: createRunId(run.id), text: run.text.slice(0, offset) } : null,
-        { ...run, id: insertedRunId, text: value, marks: cleanMarks(nextMarks) },
-        offset < run.text.length ? { ...run, id: createRunId(run.id), text: run.text.slice(offset) } : null,
-      ].filter((item): item is RichTextDocument['blocks'][number]['runs'][number] => Boolean(item));
-    }),
-  }));
+          offset > 0 ? { ...run, id: createRunId(run.id), text: run.text.slice(0, offset) } : null,
+          { ...run, id: insertedRunId, text: value, marks: cleanMarks(nextMarks) },
+          offset < run.text.length ? { ...run, id: createRunId(run.id), text: run.text.slice(offset) } : null,
+        ].filter((item): item is RichTextRun => Boolean(item));
+      }),
+    };
+  });
 
   const fallbackCursor =
     position ??
+    fallbackPosition ??
     ({
       blockId: fallbackBlock?.id ?? '',
       runId: fallbackRun?.id ?? '',

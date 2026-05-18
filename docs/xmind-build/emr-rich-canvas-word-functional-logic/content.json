@@ -18,13 +18,15 @@
                 {
                   "id": "app-route",
                   "class": "topic",
-                  "title": "App.tsx 用 History API 维护轻量路由",
+                  "title": "App.tsx 用 React Router 维护页面路由",
                   "children": {
                     "attached": [
                       { "id": "route-temperature", "class": "topic", "title": "/temperature：体温单和床旁录入" },
                       { "id": "route-overview", "class": "topic", "title": "/overview：病历概览统计" },
-                      { "id": "route-medical-record", "class": "topic", "title": "/medical-record：v0 纯文本电子病历" },
-                      { "id": "route-rich", "class": "topic", "title": "/rich-canvas-word：v1 富文本编辑器" }
+                      { "id": "route-medical-record-rich", "class": "topic", "title": "/medical-record-rich：富文本电子病历 V1" },
+                      { "id": "route-rich", "class": "topic", "title": "/rich-canvas-word：v1 富文本编辑器" },
+                      { "id": "route-word-basic", "class": "topic", "title": "/word-basic：v0 纯文本电子病历" },
+                      { "id": "route-medical-record", "class": "topic", "title": "/medical-record：历史路径，重定向到 /word-basic" }
                     ]
                   }
                 },
@@ -35,7 +37,7 @@
                   "children": {
                     "attached": [
                       { "id": "patient-sidebar", "class": "topic", "title": "patient-card 竖排展示患者字段，桌面端 sticky" },
-                      { "id": "workspace-content", "class": "topic", "title": "workspace-content 承载图表、v0 编辑器或富文本编辑器" },
+                      { "id": "workspace-content", "class": "topic", "title": "workspace-content 承载图表、富文本电子病历、v0 编辑器或通用富文本编辑器" },
                       { "id": "layout-value", "class": "topic", "title": "目的：减少病历头占用高度，让编辑器首屏看到更多正文" }
                     ]
                   }
@@ -48,7 +50,7 @@
                     "attached": [
                       { "id": "patient-head", "class": "topic", "title": "用于左侧病历头展示" },
                       { "id": "medical-doc-source", "class": "topic", "title": "用于生成电子病历示例文档" },
-                      { "id": "future-field-insert", "class": "topic", "title": "未来可作为插入患者字段的业务命令来源" }
+                      { "id": "future-field-insert", "class": "topic", "title": "当前用于生成富文本病历，后续也可作为插入患者字段的业务命令来源" }
                     ]
                   }
                 }
@@ -77,7 +79,7 @@
                 {
                   "id": "current-v0-flow",
                   "class": "topic",
-                  "title": "当前 /medical-record：结构化文档先转纯文本",
+                  "title": "当前 /word-basic：结构化文档先转纯文本",
                   "children": {
                     "attached": [
                       { "id": "doc-to-text", "class": "topic", "title": "documentToPlainText() 将 block 拼成文本流" },
@@ -87,13 +89,13 @@
                   }
                 },
                 {
-                  "id": "future-emr-wrapper",
+                  "id": "emr-wrapper",
                   "class": "topic",
-                  "title": "未来 medical-record 包装层",
+                  "title": "当前 medical-record 富文本业务包装层",
                   "children": {
                     "attached": [
-                      { "id": "convert-rich-doc", "class": "topic", "title": "把病历模板转换为 RichTextDocument" },
-                      { "id": "business-toolbar", "class": "topic", "title": "提供插入患者字段、模板、短语、医疗符号的业务工具栏" },
+                      { "id": "convert-rich-doc", "class": "topic", "title": "把患者信息和生命体征转换为 RichTextDocument" },
+                      { "id": "business-toolbar", "class": "topic", "title": "后续提供插入患者字段、模板、短语、医疗符号的业务工具栏" },
                       { "id": "call-rich-command", "class": "topic", "title": "底层调用 rich-canvas-word 的通用插入和格式命令" },
                       { "id": "quality-control", "class": "topic", "title": "后续接入结构化保存、字段绑定和病历质控" }
                     ]

@@ -9,15 +9,17 @@ mindmap
   root((React EMR Demo))
     应用层
       src/App.tsx
-        History API 轻量路由
+        React Router 路由
         顶部导航 top-strip
         左侧病历头 patient-card
         右侧工作区 workspace-content
       路由
         /temperature 体温单
         /overview 病历概览
-        /medical-record v0电子病历
+        /medical-record-rich 富文本电子病历V1
         /rich-canvas-word 富文本V1
+        /word-basic 基础版V0
+        /medical-record 重定向到word-basic
     业务数据
       src/data/vitals.ts
         patientInfo 患者信息
@@ -29,6 +31,9 @@ mindmap
         paragraph 段落块
         fieldGroup 字段组块
         documentToPlainText
+      src/lib/medical-record/richMedicalRecordDocument.ts
+        PatientInfo和VitalRecord
+        转换为RichTextDocument
     图表模块
       TemperatureChart.tsx
         D3 SVG
@@ -50,8 +55,12 @@ mindmap
         格式命令
         草稿保存
         分页滚动跟随
-    后续业务包装
+    业务包装
       medical-record 业务层
+        MedicalRichRecordEditor
+        编辑病历
+        归档预览
+        同步体征
         患者字段
         病历模板
         常用短语
@@ -65,19 +74,22 @@ mindmap
 flowchart TD
   A["patientInfo 患者基础信息"] --> B["App.tsx 病历头展示"]
   A --> C["medicalRecordDocument.ts 示例病历生成"]
+  A --> G["richMedicalRecordDocument.ts"]
   C --> D["MedicalRecordDocument 结构化文档"]
   D --> E["documentToPlainText()"]
-  E --> F["canvas-word-basic /medical-record"]
+  E --> F["canvas-word-basic /word-basic"]
 
-  D -.未来演进.-> G["medical-record 业务包装层"]
-  G --> H["转换为 RichTextDocument"]
+  L["VitalRecord[] 生命体征"] --> G
+  M["MedicalRichRecordEditor"] --> G
+  G --> H["RichTextDocument"]
   H --> I["rich-canvas-word 通用富文本能力"]
+  M --> I
 
   B --> J["左侧 patient-card"]
-  I --> K["右侧富文本编辑区"]
+  I --> K["右侧 /medical-record-rich 富文本编辑区"]
 ```
 
-当前 `/medical-record` 仍走 v0 纯文本链路：结构化病历先转成纯文本，再交给 `canvas-word-basic` 编辑。未来更理想的路线是让 `medical-record` 业务层把病历结构转换为 `RichTextDocument`，再调用 `rich-canvas-word` 的通用编辑命令。
+当前 `/word-basic` 保留 v0 纯文本链路：结构化病历先转成纯文本，再交给 `canvas-word-basic` 编辑。`/medical-record-rich` 已走富文本业务包装链路：`medical-record` 业务层把患者信息和生命体征转换为 `RichTextDocument`，再调用 `rich-canvas-word` 的通用编辑、渲染、导出和打印能力。旧 `/medical-record` 路径重定向到 `/word-basic`。
 
 ## v0：canvas-word-basic
 
@@ -162,7 +174,7 @@ mindmap
     定位
       通用富文本Canvas Word
       不耦合电子病历业务
-      未来被medical-record包装
+      已被medical-record第一版包装
     入口
       RichCanvasWordRecord.tsx
         标题状态
@@ -279,6 +291,9 @@ mindmap
         Clear
         Align
         Zoom
+        FindReplace
+        Export
+        PrintPDF
       formatOptions.ts
         字号档位
         颜色循环
@@ -462,6 +477,8 @@ mindmap
       剪贴板
       撤销重做
       草稿保存
+      查找替换
+      打印和PDF位图导出
     rich-canvas-word不负责
       患者字段语义
       病历模板语义
@@ -469,7 +486,13 @@ mindmap
       医疗符号
       病历质控
       后端保存协议
-    medical-record未来负责
+    medical-record当前负责
+      MedicalRichRecordEditor
+      将患者和体征转换为RichTextDocument
+      编辑和归档预览模式
+      同步体征
+      业务保存入口
+    medical-record后续负责
       将患者信息转换为插入命令
       将病历模板转换为block/run
       封装业务工具栏
@@ -481,7 +504,7 @@ mindmap
       浮动文本框
       批注
       页眉页脚
-      打印PDF
+      可选择文本PDF
 ```
 
 ## 推荐阅读顺序
@@ -490,7 +513,7 @@ mindmap
 2. 再读 [02-technical-architecture.md](./02-technical-architecture.md)，理解页面和模块边界。
 3. 如果关心 v0 编辑器，读 [05-canvas-editor-architecture.md](./05-canvas-editor-architecture.md) 和 [08-canvas-word-record-refactor-plan.md](./08-canvas-word-record-refactor-plan.md)。
 4. 如果关心 rich editor，读 [09-rich-canvas-word-v1-plan.md](./09-rich-canvas-word-v1-plan.md) 和 [10-rich-canvas-word-next-plan.md](./10-rich-canvas-word-next-plan.md)。
-5. 如果要接入电子病历业务层，从 [07-canvas-word-version-roadmap.md](./07-canvas-word-version-roadmap.md) 的 `medical-record` 包装层规划开始。
+5. 如果要继续推进电子病历业务层，从 [10-rich-canvas-word-next-plan.md](./10-rich-canvas-word-next-plan.md) 的阶段 11.2 开始。
 
 ## 一句话架构总结
 

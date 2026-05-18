@@ -630,7 +630,123 @@ type RichCanvasWordProps = {
 3. 阶段 10.3：支持受控文档值。
 4. 阶段 10.4：支持工具栏按钮配置。
 5. 阶段 10.5：整理公共导出入口。
-6. 后续增强：DOCX 导出或后端 PDF 渲染。
+6. 阶段 11.1：真实 EMR 业务包装层。已完成第一版。
+7. 阶段 11.2：EMR 业务工具栏与模板插入。
+8. 后续增强：DOCX 导出或后端 PDF 渲染。
+
+## 阶段 11：真实 EMR 业务接入
+
+### 阶段 11.1：EMR 业务包装层
+
+目标：
+
+- 验证 `RichCanvasWordRecord` 能否承载真实电子病历页面。
+- 业务层负责患者、诊断、住院号、生命体征摘要等医疗语义。
+- 通用 `rich-canvas-word` 继续只负责富文本文档编辑、渲染、查找、导出和打印。
+
+当前进展：
+
+- 已新增 `src/lib/medical-record/richMedicalRecordDocument.ts`。
+  - 将 `PatientInfo` 和 `VitalRecord[]` 转换为 `RichTextDocument`。
+  - 生成住院电子病历标题、患者字段、主诉、现病史、生命体征摘要、体格检查、诊疗计划、病程记录和签名。
+  - 使用 run marks 表达加粗、颜色、字号和右对齐，不污染通用编辑器类型。
+- 已新增 `src/lib/medical-record/MedicalRichRecordEditor.tsx`。
+  - 用 `value/onChange/onSave/readonly/toolbarConfig` 接入 `RichCanvasWordRecord`。
+  - 支持“编辑病历 / 归档预览”切换。
+  - 支持“同步体征”，从当前体温单记录重新生成业务文档。
+  - 使用 `autoSave={false}`，保存由业务层 `onSave` 接管。
+  - 编辑模式和归档预览使用不同工具栏配置。
+- 已新增 `/medical-record-rich` 富文本电子病历路由，并在顶部导航中展示为“电子病历 V1”。
+- `/word-basic` 保留原 v0 纯文本 Canvas Word。
+- 旧 `/medical-record` 路径已重定向到 `/word-basic`，避免路径语义继续误导。
+- `/word-basic` 顶部导航名称为“基础版 V0”，并位于“富文本 V1”右侧。
+- `/rich-canvas-word` 仍保留为通用组件 demo。
+
+验收：
+
+- `/word-basic` 可打开原 v0 纯文本病历文档。
+- `/medical-record-rich` 可打开富文本电子病历业务包装层。
+- 页面显示患者姓名、科室、床号、诊断和生命体征摘要。
+- 编辑模式可编辑文档。
+- 归档预览禁用编辑并保留打印/PDF/复制/缩放。
+- 点击“同步体征”可按当前体温单记录重新生成文档。
+- `pnpm run build` 通过。
+- 浏览器打开 `/medical-record-rich` 后，富文本电子病历、患者信息、归档预览、同步体征、打印预览和导出 PDF 均正常显示，控制台无 error。
+- 点击“归档预览”后进入只读预览状态。
+- 顶部导航顺序为“病历概览 / 体温单 / 电子病历 V1 / 富文本 V1 / 基础版 V0”。
+- 访问旧 `/medical-record` 会跳转到 `/word-basic`。
+
+### 阶段 11.2：EMR 业务工具栏与模板插入
+
+目标：
+
+- 让富文本电子病历不只是展示由业务数据生成的文档，还能执行常见 EMR 编辑动作。
+- 业务按钮、病历模板、患者字段和医疗短语仍放在 `medical-record` 层，不进入通用 `rich-canvas-word` 内核。
+- 先用现有 `RichCanvasWordRecord` 公共 API 能承载的方式推进；若需要插入命令 API，再小步扩展公共入口。
+
+建议功能范围：
+
+- 在 `MedicalRichRecordEditor` 上方增加业务工具栏或侧栏。
+- 插入患者字段：
+  - 姓名、性别、年龄、科室、床号、住院号、入院日期、诊断。
+- 插入当前日期和签名占位。
+- 插入病历段落模板：
+  - 主诉。
+  - 现病史。
+  - 体格检查。
+  - 诊疗计划。
+  - 病程记录。
+- 插入常用短语：
+  - 生命体征平稳。
+  - 未诉明显不适。
+  - 遵医嘱继续观察。
+- 增加同步体征的确认或差异提示，避免直接覆盖医生已编辑正文。
+
+实现建议：
+
+- 新增 `src/lib/medical-record/medicalRecordTemplates.ts`：
+  - 管理模板 block/run 片段。
+  - 管理患者字段和常用短语定义。
+- 新增 `src/lib/medical-record/MedicalRecordBusinessToolbar.tsx`：
+  - 只负责业务按钮和菜单。
+  - 不直接操作 Canvas。
+- 评估并扩展 `RichCanvasWordRecord` 公共 API：
+  - 优先考虑 `editorRef` 或命令回调这类受控命令入口。
+  - 初期也可以由业务层直接更新 `value`，但要明确是否需要保留 undo/redo 语义。
+- `rich-canvas-word` 内部如需新增插入片段能力，应放在 editing 模块，并从公共入口只导出必要类型或命令。
+
+验收：
+
+- `/medical-record-rich` 可插入患者字段和常用短语。
+- 插入内容保留基础样式，并进入文档保存状态。
+- 编辑模式可用，归档预览模式禁用业务插入。
+- 同步体征不会静默覆盖用户已编辑内容。
+- `pnpm run build` 通过。
+
+### 阶段 12：导出与归档增强
+
+目标：
+
+- 补齐病历归档链路，让 V1 从编辑演示更接近可交付文档。
+
+候选方向：
+
+- DOCX 导出：
+  - 将 `RichTextDocument` 映射到标题、段落、run 样式和对齐。
+  - 优先支持纯文本、加粗、下划线、字号、颜色、段落对齐。
+  - 表格、图片、页眉页脚先不纳入第一版。
+- 可选择文本 PDF：
+  - 当前 PDF 是 Canvas 位图，版式稳定但文本不可选。
+  - 若需要可选择文本，考虑后端 PDF 渲染或专门版式引擎。
+- 归档元数据：
+  - 保存时间、归档人、文档版本号。
+  - 归档预览默认工具栏只保留复制、打印、PDF 和缩放。
+
+推荐顺序：
+
+1. 先做 DOCX 导出最小版。
+2. 再评估是否需要可选择文本 PDF。
+3. 最后补归档元数据和版本展示。
 
 ## 开发原则
 

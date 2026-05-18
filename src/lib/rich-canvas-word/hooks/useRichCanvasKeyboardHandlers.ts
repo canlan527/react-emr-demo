@@ -15,7 +15,10 @@ import type {
   RichTextLayoutResult,
   RichTextPosition,
   RichTextSelection,
+  RichTableCellSelection,
+  RichTableSelection,
 } from '../richTypes';
+import { isRichTextTableBlock } from '../document/richTextBlocks';
 
 // textarea 键盘事件桥接。
 //
@@ -43,9 +46,11 @@ type UseRichCanvasKeyboardHandlersOptions = {
   onRedo: () => void;
   onSelectionChange: (selection: RichTextSelection | null) => void;
   onSplitBlock: (cursor: RichTextPosition | null, selection: RichTextSelection | null) => void;
+  onTableSelectionChange: (selection: RichTableSelection | null) => void;
   onUndo: () => void;
   readonly: boolean;
   selection: RichTextSelection | null;
+  tableCellSelection: RichTableCellSelection | null;
 };
 
 export function useRichCanvasKeyboardHandlers({
@@ -67,9 +72,11 @@ export function useRichCanvasKeyboardHandlers({
   onRedo,
   onSelectionChange,
   onSplitBlock,
+  onTableSelectionChange,
   onUndo,
   readonly,
   selection,
+  tableCellSelection,
 }: UseRichCanvasKeyboardHandlersOptions) {
   // 统一处理光标移动和 Shift 扩展选区。
   // latest refs 用于避免 React state 尚未刷新时连续键盘事件读到旧 cursor/selection。
@@ -136,8 +143,30 @@ export function useRichCanvasKeyboardHandlers({
 
     if (isCommandKey && event.key.toLowerCase() === 'a') {
       event.preventDefault();
+      if (tableCellSelection) {
+        const table = document.blocks.find((block) => block.id === tableCellSelection.tableBlockId);
+        if (table && isRichTextTableBlock(table)) {
+          const lastRowIndex = Math.max(0, table.rows.length - 1);
+          const lastCellIndex = Math.max(0, (table.rows[lastRowIndex]?.cells.length ?? 1) - 1);
+          onSelectionChange(null);
+          onTableSelectionChange({
+            type: 'cells',
+            tableBlockId: table.id,
+            anchor: { tableBlockId: table.id, cellId: table.rows[0]?.cells[0]?.id ?? '', rowIndex: 0, cellIndex: 0 },
+            focus: {
+              tableBlockId: table.id,
+              cellId: table.rows[lastRowIndex]?.cells[lastCellIndex]?.id ?? '',
+              rowIndex: lastRowIndex,
+              cellIndex: lastCellIndex,
+            },
+          });
+        }
+        return;
+      }
+
       const boundaries = getRichDocumentBoundaryPositions(document);
       if (boundaries) {
+        onTableSelectionChange(null);
         onSelectionChange({ anchor: boundaries.start, focus: boundaries.end });
         onCursorChange(boundaries.end);
       }

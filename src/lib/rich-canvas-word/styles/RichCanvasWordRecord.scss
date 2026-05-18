@@ -14,6 +14,56 @@
   @apply flex flex-wrap gap-2;
 }
 
+.rich-canvas-api-panel {
+  @apply rounded-lg border border-clinical-line bg-white p-4 shadow-panel;
+}
+
+.rich-canvas-api-actions {
+  @apply mt-3 flex flex-wrap gap-2;
+}
+
+.rich-canvas-api-state {
+  @apply mt-3 grid gap-2 text-sm text-clinical-muted lg:grid-cols-2;
+
+  span {
+    @apply min-w-0 rounded-md border border-clinical-line bg-clinical-surface px-3 py-2;
+    overflow-wrap: anywhere;
+  }
+}
+
+.rich-canvas-table-picker {
+  @apply mt-3 w-fit rounded-lg border border-clinical-line bg-clinical-surface p-3;
+}
+
+.rich-canvas-table-picker-head {
+  @apply mb-2 flex items-center justify-between gap-4 text-sm text-clinical-muted;
+
+  span {
+    @apply font-bold text-clinical-ink;
+  }
+
+  strong {
+    @apply min-w-16 text-right text-clinical-pulse;
+  }
+}
+
+.rich-canvas-table-grid {
+  @apply grid gap-1;
+  grid-template-columns: repeat(6, 22px);
+
+  button {
+    @apply h-[22px] w-[22px] rounded border border-clinical-line bg-white transition;
+  }
+
+  button.is-active {
+    @apply border-clinical-pulse bg-[#d7f0f1];
+  }
+
+  button:disabled {
+    @apply cursor-not-allowed opacity-45;
+  }
+}
+
 .rich-canvas-heading {
   @apply mb-4 flex flex-col justify-between gap-3 lg:flex-row lg:items-end;
 

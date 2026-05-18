@@ -9,7 +9,7 @@
 // 降低重构期间的调用方改动面。
 
 export { createRichFont, layoutRichTextDocument, richCanvasWordLayout } from './richTextLineBreaking';
-export { hitTestRichTextPosition } from './richTextHitTesting';
+export { hitTestRichTableCell, hitTestRichTextPosition } from './richTextHitTesting';
 export {
   getRichCursorRect,
   getRichLineBoundaryPosition,

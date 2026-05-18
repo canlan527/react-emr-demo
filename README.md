@@ -2,7 +2,7 @@
 
 住院患者电子病历与体温单演示项目。
 
-项目包含体温单趋势图、病历头信息、Canvas 绘制的简易 Web Word 电子病历编辑器，并已沉淀富文本工具栏的后续规划。
+项目包含体温单趋势图、病历头信息、Canvas 绘制的简易 Web Word 电子病历编辑器，以及已接入业务包装层的富文本电子病历 V1。
 
 ## 功能概览
 
@@ -12,7 +12,9 @@
   - 体温测量方式区分。
   - tooltip、表单录入、重复时间槽覆盖、重置示例数据。
 - 电子病历：
-  - `/medical-record` 路由。
+  - `/medical-record-rich` 路由提供富文本电子病历 V1。
+  - `/word-basic` 路由保留基础版 V0 纯文本 Canvas Word。
+  - 旧 `/medical-record` 路径会重定向到 `/word-basic`。
   - 病历头标准字段。
   - Canvas 文本绘制、自动换行、分页。
   - 中文输入法输入。
@@ -23,6 +25,7 @@
 - 文档规划：
   - 已规划富文本工具栏、富文本文档模型和后续分期边界。
   - 富文本 v1 已支持草稿保存、自动保存、只读预览、普通文本查找、替换、JSON/纯文本导出、打印预览和浏览器保存 PDF。
+  - 业务层已能把患者信息和生命体征摘要转换为 `RichTextDocument`，并通过 `MedicalRichRecordEditor` 接入通用富文本编辑器。
 
 ## 技术栈
 
@@ -58,8 +61,9 @@ pnpm run preview
 
 - `/overview`：患者概览。
 - `/temperature`：体温单。
-- `/medical-record`：电子病历。
+- `/medical-record-rich`：富文本电子病历 V1。
 - `/rich-canvas-word`：富文本 Canvas Word v1。
+- `/word-basic`：基础版 V0 纯文本 Canvas Word。
 
 ## 项目文档
 

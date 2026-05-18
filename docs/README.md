@@ -11,7 +11,7 @@
 - [03-temperature-chart-plan.md](./03-temperature-chart-plan.md)
   - 记录体温单图表模块的数据模型、图表要求、交互和已完成事项。
 - [04-electronic-medical-record-plan.md](./04-electronic-medical-record-plan.md)
-  - 记录电子病历路由、文档模型、Canvas Word 基础能力和后续演进方向。
+  - 记录电子病历路由、文档模型、Canvas Word 基础能力、富文本业务包装层和后续演进方向。
 - [05-canvas-editor-architecture.md](./05-canvas-editor-architecture.md)
   - 记录 Canvas 编辑器内部模块、排版算法、输入法代理、选区和剪贴板设计。
 - [06-known-issues-and-next-steps.md](./06-known-issues-and-next-steps.md)
@@ -28,6 +28,8 @@
   - 用 Mermaid 思维导图梳理电子病历、canvas-word-basic 和 rich-canvas-word 的模块关系、数据流、编辑链路和演进边界。
 - [12-rich-canvas-word-stage-7-10-delivery.md](./12-rich-canvas-word-stage-7-10-delivery.md)
   - 记录 rich-canvas-word 阶段 7-10 的交付内容、打印/PDF 踩坑和最终稳定方案、业务组件 API 与验收结果。
+- [13-rich-canvas-word-v2-and-emr-plan.md](./13-rich-canvas-word-v2-and-emr-plan.md)
+  - 整理 rich-canvas-word V2、公共 API、结构化 EMR 业务层、HIS/EMR 边界和后续开发顺序。
 
 ## 当前项目定位
 
@@ -55,6 +57,10 @@
 - 富文本 v1 已支持普通文本查找、匹配高亮、上一个/下一个跳转、替换当前项和全部替换。
 - 富文本 v1 已支持 JSON 和纯文本导出。
 - 富文本 v1 已支持页面内打印预览和浏览器打印保存 PDF。
+- `rich-canvas-word` V2 已进入表格能力开发：已支持表格 block、类 WPS 行列选择器、单元格编辑、中文标点换行、单元格内文字划选、跨单元格区域划选，以及表格区域复制/剪切/粘贴为表格结构。
+- `medical-record` 业务层已新增 `MedicalRichRecordEditor` 和 `richMedicalRecordDocument`。
+- `/medical-record-rich` 已作为富文本电子病历 V1 入口，支持编辑病历、归档预览、同步体征、业务保存、打印预览和导出 PDF。
+- `/word-basic` 保留原 v0 纯文本 Canvas Word；旧 `/medical-record` 路径重定向到 `/word-basic`。
 - 项目包管理器已切换为 pnpm。
 
 ## 接手建议
@@ -70,3 +76,4 @@
 7. 若要开始实现富文本 v1，读 [09-rich-canvas-word-v1-plan.md](./09-rich-canvas-word-v1-plan.md)。
 8. 若要快速建立电子病历和 rich-canvas-word 的全局图景，读 [11-emr-rich-canvas-word-mindmap.md](./11-emr-rich-canvas-word-mindmap.md)。
 9. 若要了解最近阶段 7-10 的完整交付边界，读 [12-rich-canvas-word-stage-7-10-delivery.md](./12-rich-canvas-word-stage-7-10-delivery.md)。
+10. 若要继续推进下一阶段，优先读 [13-rich-canvas-word-v2-and-emr-plan.md](./13-rich-canvas-word-v2-and-emr-plan.md)，再回看 [10-rich-canvas-word-next-plan.md](./10-rich-canvas-word-next-plan.md) 末尾的阶段 11 和阶段 12 计划。

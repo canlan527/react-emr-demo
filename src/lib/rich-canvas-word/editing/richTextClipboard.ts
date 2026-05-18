@@ -1,4 +1,5 @@
 import type { RichTextAlign, RichTextBlock, RichTextClipboardSlice, RichTextMarks, RichTextRun } from '../richTypes';
+import { getRichTextBlockHtmlTag, isRichTextTableBlock, isRichTextTextBlock } from '../document/richTextBlocks';
 import { richTextSliceToPlainText } from './richTextEditing';
 
 // 富文本系统剪贴板工具。
@@ -60,7 +61,34 @@ export function serializeRichTextSliceToHtml(slice: RichTextClipboardSlice | nul
 
   const blocks = slice.blocks
     .map((block) => {
-      const tag = block.type === 'heading' ? 'h1' : 'p';
+      if (isRichTextTableBlock(block)) {
+        const rows = block.rows
+          .map((row) => {
+            const cells = row.cells
+              .map((cell) => {
+                const content = cell.runs
+                  .map((run) => {
+                    const text = escapeHtml(run.text).replace(/\n/g, '<br>');
+                    const style = marksToCss(run.marks);
+                    return style ? `<span style="${style}">${text}</span>` : `<span>${text}</span>`;
+                  })
+                  .join('');
+                return `<td style="border: 1px solid #94a3b8; padding: 6px 10px; min-width: 80px">${content || '<br>'}</td>`;
+              })
+              .join('');
+
+            return `<tr>${cells}</tr>`;
+          })
+          .join('');
+
+        return `<table style="border-collapse: collapse; margin: 0 0 8px 0">${rows}</table>`;
+      }
+
+      if (!isRichTextTextBlock(block)) {
+        return '';
+      }
+
+      const tag = getRichTextBlockHtmlTag(block);
       const blockStyle = `text-align: ${alignToCss(block.align)}; margin: 0 0 8px 0`;
       const runs = block.runs
         .map((run) => {
@@ -72,6 +100,7 @@ export function serializeRichTextSliceToHtml(slice: RichTextClipboardSlice | nul
 
       return `<${tag} style="${blockStyle}">${runs || '<br>'}</${tag}>`;
     })
+    .filter(Boolean)
     .join('');
 
   return `<div data-rich-canvas-word="true">${blocks}</div>`;
@@ -81,11 +110,11 @@ export function serializeRichTextSliceToHtml(slice: RichTextClipboardSlice | nul
 // 浏览器不支持时降级为纯文本，保证复制至少可用。
 export async function writeRichTextClipboard(slice: RichTextClipboardSlice | null, plainText?: string) {
   const text = plainText ?? richTextSliceToPlainText(slice);
-  if (!text) {
+  const html = serializeRichTextSliceToHtml(slice);
+  if (!text && !html) {
     return;
   }
 
-  const html = serializeRichTextSliceToHtml(slice);
   const clipboardItem = typeof ClipboardItem === 'undefined' || !html
     ? null
     : new ClipboardItem({

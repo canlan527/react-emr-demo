@@ -2,6 +2,7 @@ import { Navigate, Route, Routes } from 'react-router-dom';
 import { AppHeader } from './components/AppHeader';
 import {
   MedicalRecordPage,
+  MedicalRichRecordPage,
   NursingWorkspace,
   OverviewPage,
   RichCanvasWordPage,
@@ -19,8 +20,10 @@ function App() {
         <Route element={<NursingWorkspace />}>
           <Route path={appRoutes.overview} element={<OverviewPage />} />
           <Route path={appRoutes.temperature} element={<TemperaturePage />} />
-          <Route path={appRoutes.medicalRecord} element={<MedicalRecordPage />} />
+          <Route path={appRoutes.medicalRecordRich} element={<MedicalRichRecordPage />} />
           <Route path={appRoutes.richCanvasWord} element={<RichCanvasWordPage />} />
+          <Route path={appRoutes.wordBasic} element={<MedicalRecordPage />} />
+          <Route path="/medical-record" element={<Navigate to={appRoutes.wordBasic} replace />} />
         </Route>
       </Routes>
     </main>

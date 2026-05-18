@@ -1,4 +1,5 @@
 import type { RichTextAlign, RichTextDocument, RichTextMarks, RichTextPosition, RichTextSelection } from '../richTypes';
+import { isRichTextTextBlock } from '../document/richTextBlocks';
 import { clampOffset, compareRichTextPositions, findBlockAndRun } from './richTextPosition';
 import {
   cleanMarks,
@@ -51,6 +52,10 @@ export function applyRichTextMarksToSelection(
   let nextSelectionEnd: RichTextPosition | null = null;
 
   const blocks = document.blocks.map((block) => {
+    if (!isRichTextTextBlock(block)) {
+      return block;
+    }
+
     const runs = block.runs.flatMap((run) => {
       const runStart = { blockId: block.id, runId: run.id, offset: 0 };
       const runEnd = { blockId: block.id, runId: run.id, offset: run.text.length };
@@ -81,7 +86,7 @@ export function applyRichTextMarksToSelection(
         startOffset > 0 ? { ...run, id: createRunId(run.id), text: run.text.slice(0, startOffset) } : null,
         selectedRun,
         endOffset < run.text.length ? { ...run, id: createRunId(run.id), text: run.text.slice(endOffset) } : null,
-      ].filter((item): item is RichTextDocument['blocks'][number]['runs'][number] => Boolean(item));
+      ].filter((item): item is typeof run => Boolean(item));
     });
 
     return { ...block, runs: ensureRuns({ ...block, runs }, block.runs[0]) };
@@ -120,6 +125,10 @@ export function applyRichTextAlignToSelection(
   // 无选区时只修改 cursor 所在 block。
   const range = normalizeRichTextSelection(document, selection);
   const blocks = document.blocks.map((block) => {
+    if (!isRichTextTextBlock(block)) {
+      return block;
+    }
+
     const shouldAlign = range
       ? compareRichTextPositions(document, { blockId: block.id, runId: block.runs[0]?.id ?? '', offset: 0 }, range.end) <= 0 &&
         compareRichTextPositions(
@@ -146,7 +155,7 @@ export function clearCurrentRichTextFormatting(
   position: RichTextPosition | null,
 ): RichTextEditResult | null {
   const { block, run } = findBlockAndRun(document, position);
-  if (!block || !run || run.text.length > 0) {
+  if (!block || !run || !isRichTextTextBlock(block) || run.text.length > 0) {
     return null;
   }
 

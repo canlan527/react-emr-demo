@@ -1,7 +1,8 @@
+import { forwardRef, useImperativeHandle } from 'react';
 import { RichCanvasToolbar } from './components/RichCanvasToolbar';
 import { RichCanvasWordSurface } from './components/RichCanvasWordSurface';
 import { useRichCanvasWordEditor } from './hooks/useRichCanvasWordEditor';
-import type { RichTextDocument, ToolbarCommand } from './richTypes';
+import type { RichCanvasWordEditorHandle, RichTextDocument, RichTextPosition, RichTextSelection, ToolbarCommand } from './richTypes';
 import './styles/RichCanvasWordRecord.scss';
 
 // Rich Canvas Word v1 container.
@@ -11,22 +12,53 @@ export type RichCanvasWordRecordProps = {
   autoSave?: boolean;
   defaultValue?: RichTextDocument;
   onChange?: (document: RichTextDocument) => void;
+  onCursorChange?: (cursor: RichTextPosition | null) => void;
   onSave?: (document: RichTextDocument) => Promise<void> | void;
+  onSelectionChange?: (selection: RichTextSelection | null) => void;
+  placeholder?: string;
   readonly?: boolean;
   toolbarConfig?: ToolbarCommand[];
   value?: RichTextDocument;
 };
 
-export function RichCanvasWordRecord({
+export const RichCanvasWordRecord = forwardRef<RichCanvasWordEditorHandle, RichCanvasWordRecordProps>(function RichCanvasWordRecord({
   autoSave = true,
   defaultValue,
   onChange,
+  onCursorChange,
   onSave,
+  onSelectionChange,
+  placeholder,
   readonly = false,
   toolbarConfig,
   value,
-}: RichCanvasWordRecordProps) {
-  const editor = useRichCanvasWordEditor({ autoSave, defaultValue, onChange, onSave, readonly, toolbarConfig, value });
+}: RichCanvasWordRecordProps, ref) {
+  const editor = useRichCanvasWordEditor({
+    autoSave,
+    defaultValue,
+    onChange,
+    onCursorChange,
+    onSave,
+    onSelectionChange,
+    readonly,
+    toolbarConfig,
+    value,
+  });
+
+  useImperativeHandle(
+    ref,
+    () => ({
+      focus: editor.focus,
+      getCursor: editor.getCursor,
+      getDocument: editor.getDocument,
+      getSelection: editor.getSelection,
+      insertBlocks: editor.insertBlocks,
+      insertText: editor.insertText,
+      replaceSelection: editor.replaceSelection,
+      setDocument: editor.replaceDocument,
+    }),
+    [editor],
+  );
 
   return (
     <section className={`rich-canvas-word${readonly ? ' is-readonly' : ''}`} aria-label="Rich Canvas Word v1">
@@ -108,7 +140,10 @@ export function RichCanvasWordRecord({
         cursor={editor.cursor}
         document={editor.document}
         focusRequest={editor.focusRequest}
+        placeholder={placeholder}
         selection={editor.selection}
+        tableCellSelection={editor.tableCellSelection}
+        tableSelection={editor.tableSelection}
         toast={editor.toast}
         readonly={editor.readonly}
         searchActiveIndex={editor.searchActiveIndex}
@@ -126,8 +161,10 @@ export function RichCanvasWordRecord({
         onRedo={editor.redo}
         onSelectionChange={editor.setSelection}
         onSplitBlock={editor.splitBlock}
+        onTableCellSelectionChange={editor.setTableCellSelection}
+        onTableSelectionChange={editor.setTableSelection}
         onUndo={editor.undo}
       />
     </section>
   );
-}
+});

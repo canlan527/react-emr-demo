@@ -1,4 +1,12 @@
-import type { RichLayoutFragment, RichLayoutLine, RichTextLayoutResult, RichTextPosition } from '../richTypes';
+import type {
+  RichLayoutFragment,
+  RichLayoutLine,
+  RichLayoutTableCell,
+  RichLayoutTableTextFragment,
+  RichTableCellSelection,
+  RichTextLayoutResult,
+  RichTextPosition,
+} from '../richTypes';
 
 // hit testing 负责把 Canvas 逻辑坐标映射回 RichTextPosition。
 // 它不读取 DOM 事件，也不关心缩放；调用方需要先把鼠标坐标转换到 layout 坐标系。
@@ -30,6 +38,25 @@ function createPosition(fragment: RichLayoutFragment, offset: number): RichTextP
     runId: fragment.runId,
     offset: Math.max(fragment.startOffset, Math.min(offset, fragment.endOffset)),
   };
+}
+
+function measureTableFragmentPrefix(ctx: CanvasRenderingContext2D, fragment: RichLayoutTableTextFragment, offset: number) {
+  ctx.font = fragment.font;
+  const targetOffset = Math.max(fragment.startOffset, Math.min(offset, fragment.endOffset));
+  let currentOffset = fragment.startOffset;
+  let prefix = '';
+
+  for (const char of Array.from(fragment.text)) {
+    const nextOffset = currentOffset + char.length;
+    if (nextOffset > targetOffset) {
+      break;
+    }
+
+    prefix += char;
+    currentOffset = nextOffset;
+  }
+
+  return ctx.measureText(prefix).width;
 }
 
 // 根据 y 找视觉行。若 y 落在行间空白，选择距离最近的行，避免点击段落空隙时光标丢失。
@@ -104,8 +131,116 @@ export function hitTestRichTextPosition(
   return createPosition(lastFragment, lastFragment.endOffset);
 }
 
+function getTableCellFallbackSelection(
+  tableBlockId: string,
+  rowIndex: number,
+  cell: RichLayoutTableCell,
+): RichTableCellSelection {
+  const lastFragment = cell.fragments[cell.fragments.length - 1];
+  return {
+    tableBlockId,
+    cellId: cell.id,
+    rowIndex,
+    cellIndex: cell.cellIndex,
+    runId: lastFragment?.runId,
+    offset: lastFragment?.endOffset,
+  };
+}
+
+function hitTestTableCellText(
+  ctx: CanvasRenderingContext2D,
+  tableBlockId: string,
+  rowIndex: number,
+  cell: RichLayoutTableCell,
+  x: number,
+  y: number,
+): RichTableCellSelection {
+  const fallback = getTableCellFallbackSelection(tableBlockId, rowIndex, cell);
+  if (cell.fragments.length === 0) {
+    return fallback;
+  }
+
+  const fragmentsByBaseline = new Map<number, RichLayoutTableTextFragment[]>();
+  cell.fragments.forEach((fragment) => {
+    const line = fragmentsByBaseline.get(fragment.baseline) ?? [];
+    line.push(fragment);
+    fragmentsByBaseline.set(fragment.baseline, line);
+  });
+
+  const line = Array.from(fragmentsByBaseline.entries())
+    .sort(([left], [right]) => Math.abs(left - y) - Math.abs(right - y))[0]?.[1]
+    ?.sort((left, right) => left.x - right.x);
+  const firstFragment = line?.[0];
+  const lastFragment = line?.[line.length - 1];
+
+  if (!line || !firstFragment || !lastFragment) {
+    return fallback;
+  }
+
+  if (x <= firstFragment.x) {
+    return { ...fallback, runId: firstFragment.runId, offset: firstFragment.startOffset };
+  }
+
+  if (x >= lastFragment.x + lastFragment.width) {
+    return { ...fallback, runId: lastFragment.runId, offset: lastFragment.endOffset };
+  }
+
+  for (const fragment of line) {
+    if (x > fragment.x + fragment.width) {
+      continue;
+    }
+
+    ctx.font = fragment.font;
+    let currentX = fragment.x;
+    let currentOffset = fragment.startOffset;
+
+    for (const char of Array.from(fragment.text)) {
+      const charWidth = ctx.measureText(char).width;
+      const nextOffset = currentOffset + char.length;
+
+      if (x <= currentX + charWidth) {
+        return {
+          ...fallback,
+          runId: fragment.runId,
+          offset: x - currentX < charWidth / 2 ? currentOffset : nextOffset,
+        };
+      }
+
+      currentX += charWidth;
+      currentOffset = nextOffset;
+    }
+
+    return { ...fallback, runId: fragment.runId, offset: fragment.endOffset };
+  }
+
+  return fallback;
+}
+
+export function hitTestRichTableCell(
+  ctx: CanvasRenderingContext2D,
+  layout: RichTextLayoutResult,
+  x: number,
+  y: number,
+  preciseTextPosition = false,
+): RichTableCellSelection | null {
+  for (const table of layout.tables) {
+    for (const cell of table.cells) {
+      if (x < cell.x || x > cell.x + cell.width || y < cell.y || y > cell.y + cell.height) {
+        continue;
+      }
+
+      return preciseTextPosition
+        ? hitTestTableCellText(ctx, table.blockId, table.rowIndex, cell, x, y)
+        : getTableCellFallbackSelection(table.blockId, table.rowIndex, cell);
+    }
+  }
+
+  return null;
+}
+
 // caret/selection 也需要 prefix 测量和 position 创建；这里集中暴露，避免重复实现导致像素不一致。
 export const richTextHitTestingInternals = {
   createPosition,
   measureFragmentPrefix,
+  measureTableFragmentPrefix,
 };

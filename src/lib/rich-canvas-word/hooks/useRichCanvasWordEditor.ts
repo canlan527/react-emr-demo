@@ -6,7 +6,19 @@ import {
   serializeRichTextDocumentToJson,
   serializeRichTextDocumentToPlainText,
 } from '../document/richTextSerialization';
+import { deleteRichTextSelection } from '../editing/richTextEditing';
+import { insertRichTextSliceAtPosition, richTextSliceToPlainText } from '../editing/richTextClipboardSlice';
+import { writeRichTextClipboard } from '../editing/richTextClipboard';
 import { findRichTextMatches, replaceRichTextSearchMatches } from '../editing/richTextSearch';
+import {
+  deleteBeforeSelectedTableCell,
+  deleteRichTableSelection,
+  extractRichTableSelectionPlainText,
+  extractRichTableSelectionSlice,
+  insertTextInSelectedTableCell,
+  pasteRichTableSliceIntoTable,
+  replaceRichTableTextSelection,
+} from '../editing/richTextTableCommands';
 import { renderRichTextDocumentPrintPages } from '../layout/richTextPrintPages';
 import { useRichCanvasClipboardCommands } from './useRichCanvasClipboardCommands';
 import { useRichCanvasFormatCommands } from './useRichCanvasFormatCommands';
@@ -18,6 +30,8 @@ import type {
   RichTextMarks,
   RichTextPosition,
   RichTextSelection,
+  RichTableCellSelection,
+  RichTableSelection,
   ToolbarCommand,
 } from '../richTypes';
 
@@ -47,7 +61,9 @@ type UseRichCanvasWordEditorOptions = {
   autoSave?: boolean;
   defaultValue?: RichTextDocument;
   onChange?: (document: RichTextDocument) => void;
+  onCursorChange?: (cursor: RichTextPosition | null) => void;
   onSave?: (document: RichTextDocument) => Promise<void> | void;
+  onSelectionChange?: (selection: RichTextSelection | null) => void;
   readonly?: boolean;
   toolbarConfig?: ToolbarCommand[];
   value?: RichTextDocument;
@@ -194,7 +210,9 @@ export function useRichCanvasWordEditor({
   autoSave = true,
   defaultValue,
   onChange,
+  onCursorChange,
   onSave,
+  onSelectionChange,
   readonly = false,
   toolbarConfig,
   value,
@@ -202,7 +220,9 @@ export function useRichCanvasWordEditor({
   const isControlled = value !== undefined;
   const initialDefaultDocumentRef = useRef(defaultValue ?? value ?? sampleRichTextDocument);
   const onChangeRef = useRef(onChange);
+  const onCursorChangeRef = useRef(onCursorChange);
   const onSaveRef = useRef(onSave);
+  const onSelectionChangeRef = useRef(onSelectionChange);
   const hasMountedRef = useRef(false);
   const skipNextOnChangeRef = useRef(false);
   const saveRequestIdRef = useRef(0);
@@ -212,6 +232,8 @@ export function useRichCanvasWordEditor({
   const [document, setDocument] = useState<RichTextDocument>(() => initialDocument);
   const [cursor, setCursor] = useState<RichTextPosition | null>(() => getInitialRichTextPosition(initialDocument));
   const [selection, setSelection] = useState<RichTextSelection | null>(null);
+  const [tableCellSelection, setTableCellSelection] = useState<RichTableCellSelection | null>(null);
+  const [tableSelection, setTableSelection] = useState<RichTableSelection | null>(null);
   const [activeMarks, setActiveMarks] = useState<RichTextMarks>({});
   const [focusRequest, setFocusRequest] = useState(0);
   const [richClipboard, setRichClipboard] = useState<RichTextClipboardSlice | null>(null);
@@ -231,7 +253,7 @@ export function useRichCanvasWordEditor({
   const hasUnsavedChanges = savedDocumentSnapshot
     ? currentDocumentSnapshot !== savedDocumentSnapshot
     : hasDocumentChangedSinceLoad;
-  const canCopy = Boolean(selection);
+  const canCopy = Boolean(selection || tableSelection);
   const searchMatches = useMemo(() => findRichTextMatches(document, searchQuery), [document, searchQuery]);
 
   useEffect(() => {
@@ -239,8 +261,24 @@ export function useRichCanvasWordEditor({
   }, [onChange]);
 
   useEffect(() => {
+    onCursorChangeRef.current = onCursorChange;
+  }, [onCursorChange]);
+
+  useEffect(() => {
     onSaveRef.current = onSave;
   }, [onSave]);
+
+  useEffect(() => {
+    onSelectionChangeRef.current = onSelectionChange;
+  }, [onSelectionChange]);
+
+  useEffect(() => {
+    onCursorChangeRef.current?.(cursor);
+  }, [cursor]);
+
+  useEffect(() => {
+    onSelectionChangeRef.current?.(selection);
+  }, [selection]);
 
   useEffect(() => {
     if (!hasMountedRef.current) {
@@ -358,6 +396,8 @@ export function useRichCanvasWordEditor({
       setCursor(getInitialRichTextPosition(value));
     }
     setSelection(null);
+    setTableCellSelection(null);
+    setTableSelection(null);
     setActiveMarks({});
     setSearchActiveIndex(-1);
     setHasDocumentChangedSinceLoad(false);
@@ -381,7 +421,12 @@ export function useRichCanvasWordEditor({
     zoom,
   });
 
-  const { deleteAfter, deleteBefore, insertText, splitBlock } = useRichCanvasTextCommands({
+  const {
+    deleteAfter: commitDeleteAfter,
+    deleteBefore: commitDeleteBefore,
+    insertText: commitInsertText,
+    splitBlock: commitSplitBlock,
+  } = useRichCanvasTextCommands({
     activeMarks,
     commitEdit,
     cursor,
@@ -390,12 +435,16 @@ export function useRichCanvasWordEditor({
     selection,
   });
 
-  const { copySelection, cutSelection, pasteClipboard } = useRichCanvasClipboardCommands({
+  const {
+    copySelection: copyTextSelection,
+    cutSelection: cutTextSelection,
+    pasteClipboard: pasteTextClipboard,
+  } = useRichCanvasClipboardCommands({
     commitEdit,
     cursor,
     document,
     getInitialPosition: getInitialRichTextPosition,
-    insertText,
+    insertText: commitInsertText,
     richClipboard,
     selection,
     setRichClipboard,
@@ -571,6 +620,8 @@ export function useRichCanvasWordEditor({
       setDocument(resetDocument);
       setCursor(getInitialRichTextPosition(resetDocument));
       setSelection(null);
+      setTableCellSelection(null);
+      setTableSelection(null);
       setActiveMarks({});
       setRichClipboard(null);
       setHasDocumentChangedSinceLoad(false);
@@ -602,12 +653,230 @@ export function useRichCanvasWordEditor({
   };
 
   const cancelSelection = () => {
-    if (!selection) {
+    if (!selection && !tableCellSelection && !tableSelection) {
       return;
     }
 
     setSelection(null);
+    setTableCellSelection(null);
+    setTableSelection(null);
     setToast('已取消选择');
+  };
+
+  const requestFocus = () => {
+    setFocusRequest((value) => value + 1);
+  };
+
+  const getTablePasteTarget = () => {
+    if (tableSelection?.type === 'cells') {
+      return tableSelection.anchor;
+    }
+
+    return tableCellSelection;
+  };
+
+  const copySelection = async () => {
+    if (tableSelection) {
+      const value = extractRichTableSelectionPlainText(document, tableSelection);
+      const slice = extractRichTableSelectionSlice(document, tableSelection);
+      if (!value && !slice) {
+        return;
+      }
+
+      setRichClipboard(slice);
+      await writeRichTextClipboard(slice, value);
+      setToast(tableSelection.type === 'cells' ? '已复制表格区域，包含表格格式' : '已复制单元格文字');
+      return;
+    }
+
+    await copyTextSelection();
+  };
+
+  const cutSelection = async () => {
+    if (readonly) {
+      setToast('只读预览模式不可编辑');
+      return;
+    }
+
+    if (tableSelection) {
+      const value = extractRichTableSelectionPlainText(document, tableSelection);
+      const slice = extractRichTableSelectionSlice(document, tableSelection);
+      if (!value && !slice) {
+        return;
+      }
+
+      setRichClipboard(slice);
+      await writeRichTextClipboard(slice, value);
+      const result = deleteRichTableSelection(document, tableSelection);
+      if (result) {
+        commitTableCellEdit(result);
+      }
+      setToast(tableSelection.type === 'cells' ? '已剪切表格区域，包含表格格式' : '已剪切单元格文字');
+      return;
+    }
+
+    await cutTextSelection();
+  };
+
+  const pasteClipboard = async () => {
+    if (readonly) {
+      setToast('只读预览模式不可编辑');
+      return;
+    }
+
+    const value = await navigator.clipboard.readText();
+    const richClipboardText = richTextSliceToPlainText(richClipboard);
+    const isTableClipboard = richClipboard?.blocks.some((block) => block.type === 'table') ?? false;
+    if (isTableClipboard && value === richClipboardText) {
+      const target = getTablePasteTarget();
+      const tablePasteResult = pasteRichTableSliceIntoTable(document, target, richClipboard);
+      if (tablePasteResult) {
+        commitTableCellEdit(tablePasteResult);
+        setToast('已按表格区域粘贴');
+        return;
+      }
+
+      const base = selection ? deleteRichTextSelection(document, selection) : { document, cursor: cursor ?? getInitialRichTextPosition(document) };
+      const result = insertRichTextSliceAtPosition(base.document, base.cursor, richClipboard);
+      if (result) {
+        commitEdit(result.document, result.cursor, result.selection);
+        setTableCellSelection(null);
+        setTableSelection(null);
+        setToast('已粘贴为表格');
+        return;
+      }
+    }
+
+    if (tableSelection?.type === 'text' && value) {
+      commitTableCellEdit(replaceRichTableTextSelection(document, tableSelection, value));
+      setToast('已粘贴到单元格选区');
+      return;
+    }
+
+    if (tableCellSelection && value) {
+      commitTableCellEdit(insertTextInSelectedTableCell(document, tableCellSelection, value));
+      setToast('已粘贴到单元格');
+      return;
+    }
+
+    await pasteTextClipboard();
+  };
+
+  const commitTableCellEdit = (result: { document: RichTextDocument; selection: RichTableCellSelection } | null) => {
+    if (!result) {
+      return false;
+    }
+
+    commitEdit(result.document, cursor ?? getInitialRichTextPosition(result.document), null);
+    setTableCellSelection(result.selection);
+    setTableSelection(null);
+    return true;
+  };
+
+  const insertText = (
+    value: string,
+    cursorOverride: RichTextPosition | null = cursor,
+    selectionOverride: RichTextSelection | null = selection,
+  ) => {
+    if (readonly) {
+      setToast('只读预览模式不可编辑');
+      return;
+    }
+
+    if (tableCellSelection) {
+      commitTableCellEdit(insertTextInSelectedTableCell(document, tableCellSelection, value));
+      return;
+    }
+
+    commitInsertText(value, cursorOverride, selectionOverride);
+    setTableCellSelection(null);
+    setTableSelection(null);
+  };
+
+  const deleteBefore = (
+    cursorOverride: RichTextPosition | null = cursor,
+    selectionOverride: RichTextSelection | null = selection,
+  ) => {
+    if (tableCellSelection) {
+      commitTableCellEdit(deleteBeforeSelectedTableCell(document, tableCellSelection));
+      return;
+    }
+
+    commitDeleteBefore(cursorOverride, selectionOverride);
+  };
+
+  const deleteAfter = (
+    cursorOverride: RichTextPosition | null = cursor,
+    selectionOverride: RichTextSelection | null = selection,
+  ) => {
+    if (tableCellSelection) {
+      commitTableCellEdit(deleteBeforeSelectedTableCell(document, tableCellSelection));
+      return;
+    }
+
+    commitDeleteAfter(cursorOverride, selectionOverride);
+  };
+
+  const splitBlock = (
+    cursorOverride: RichTextPosition | null = cursor,
+    selectionOverride: RichTextSelection | null = selection,
+  ) => {
+    if (tableCellSelection) {
+      commitTableCellEdit(insertTextInSelectedTableCell(document, tableCellSelection, '\n'));
+      return;
+    }
+
+    commitSplitBlock(cursorOverride, selectionOverride);
+  };
+
+  const insertBlocks = (blocks: RichTextDocument['blocks']) => {
+    if (readonly) {
+      setToast('只读预览模式不可编辑');
+      return;
+    }
+
+    const firstBlock = blocks[0];
+    if (!firstBlock) {
+      return;
+    }
+
+    const base = selection
+      ? deleteRichTextSelection(document, selection)
+      : { document, cursor: cursor ?? getInitialRichTextPosition(document) };
+    const result = insertRichTextSliceAtPosition(base.document, base.cursor, { blocks });
+    if (!result) {
+      setToast('无法插入内容');
+      return;
+    }
+
+    commitEdit(result.document, result.cursor, result.selection);
+    setTableCellSelection(null);
+    setTableSelection(null);
+    requestFocus();
+  };
+
+  const replaceSelection = (content: string | RichTextDocument['blocks']) => {
+    if (typeof content === 'string') {
+      insertText(content);
+      requestFocus();
+      return;
+    }
+
+    insertBlocks(content);
+  };
+
+  const replaceDocument = (nextDocument: RichTextDocument) => {
+    if (readonly) {
+      setToast('只读预览模式不可编辑');
+      return;
+    }
+
+    commitEdit(nextDocument, getInitialRichTextPosition(nextDocument), null);
+    setActiveMarks({});
+    setTableCellSelection(null);
+    setTableSelection(null);
+    setSearchActiveIndex(-1);
+    requestFocus();
   };
 
   return {
@@ -621,6 +890,8 @@ export function useRichCanvasWordEditor({
     searchQuery,
     searchReplacement,
     selection,
+    tableCellSelection,
+    tableSelection,
     saveStatus: readonly ? '只读预览' : isSaving ? '正在保存...' : hasUnsavedChanges ? '未保存更改' : formatSavedAt(lastSavedAt, lastSaveKind),
     toast,
     toolbarItems,
@@ -633,7 +904,12 @@ export function useRichCanvasWordEditor({
     exportJson,
     exportPdf,
     exportPlainText,
+    focus: requestFocus,
+    getCursor: () => cursor,
+    getDocument: () => document,
+    getSelection: () => selection,
     handleToolbarCommand,
+    insertBlocks,
     insertText,
     pasteClipboard,
     redo,
@@ -645,8 +921,12 @@ export function useRichCanvasWordEditor({
     printPreview,
     setCursor,
     setSelection,
+    setTableCellSelection,
+    setTableSelection,
     setSearchReplacement,
     setSearchQuery: updateSearchQuery,
+    replaceDocument,
+    replaceSelection,
     splitBlock,
     applyFormatCommand,
     undo,

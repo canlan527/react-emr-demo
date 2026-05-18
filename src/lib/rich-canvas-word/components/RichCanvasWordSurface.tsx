@@ -3,7 +3,15 @@ import { useRichCanvasCompositionHandlers } from '../hooks/useRichCanvasComposit
 import { useRichCanvasKeyboardHandlers } from '../hooks/useRichCanvasKeyboardHandlers';
 import { useRichCanvasPointerHandlers } from '../hooks/useRichCanvasPointerHandlers';
 import { useRichCanvasRendering } from '../hooks/useRichCanvasRendering';
-import type { RichTextDocument, RichTextFormatCommand, RichTextPosition, RichTextSearchMatch, RichTextSelection } from '../richTypes';
+import type {
+  RichTableCellSelection,
+  RichTableSelection,
+  RichTextDocument,
+  RichTextFormatCommand,
+  RichTextPosition,
+  RichTextSearchMatch,
+  RichTextSelection,
+} from '../richTypes';
 import './styles/RichCanvasWordSurface.scss';
 
 // 正文 Surface 负责 DOM 事件和 Canvas 编辑体验的桥接。
@@ -16,7 +24,10 @@ type RichCanvasWordSurfaceProps = {
   document: RichTextDocument;
   cursor: RichTextPosition | null;
   focusRequest: number;
+  placeholder?: string;
   selection: RichTextSelection | null;
+  tableCellSelection: RichTableCellSelection | null;
+  tableSelection: RichTableSelection | null;
   toast: string;
   readonly: boolean;
   searchActiveIndex: number;
@@ -34,6 +45,8 @@ type RichCanvasWordSurfaceProps = {
   onRedo: () => void;
   onSelectionChange: (selection: RichTextSelection | null) => void;
   onSplitBlock: (cursor: RichTextPosition | null, selection: RichTextSelection | null) => void;
+  onTableCellSelectionChange: (selection: RichTableCellSelection | null) => void;
+  onTableSelectionChange: (selection: RichTableSelection | null) => void;
   onUndo: () => void;
 };
 
@@ -41,7 +54,10 @@ export function RichCanvasWordSurface({
   cursor,
   document,
   focusRequest,
+  placeholder,
   selection,
+  tableCellSelection,
+  tableSelection,
   toast,
   readonly,
   searchActiveIndex,
@@ -59,6 +75,8 @@ export function RichCanvasWordSurface({
   onRedo,
   onSelectionChange,
   onSplitBlock,
+  onTableCellSelectionChange,
+  onTableSelectionChange,
   onUndo,
 }: RichCanvasWordSurfaceProps) {
   const composingRef = useRef(false);
@@ -81,10 +99,13 @@ export function RichCanvasWordSurface({
     focusRequest,
     hideCursor: readonly,
     inputRef,
+    placeholder,
     scrollerRef,
     searchActiveIndex,
     searchMatches,
     selection,
+    tableCellSelection,
+    tableSelection,
     zoom,
   });
 
@@ -104,6 +125,8 @@ export function RichCanvasWordSurface({
     layout,
     onCursorChange,
     onSelectionChange,
+    onTableCellSelectionChange,
+    onTableSelectionChange,
     zoom,
   });
 
@@ -126,9 +149,11 @@ export function RichCanvasWordSurface({
     onRedo,
     onSelectionChange,
     onSplitBlock,
+    onTableSelectionChange,
     onUndo,
     readonly,
     selection,
+    tableCellSelection,
   });
 
   return (
@@ -154,6 +179,7 @@ export function RichCanvasWordSurface({
         <canvas
           ref={canvasRef}
           aria-label="Rich Canvas Word 正文"
+          onDoubleClick={pointerHandlers.handleDoubleClick}
           onMouseDown={pointerHandlers.handleMouseDown}
           onMouseLeave={pointerHandlers.stopDragging}
           onMouseMove={pointerHandlers.handleMouseMove}

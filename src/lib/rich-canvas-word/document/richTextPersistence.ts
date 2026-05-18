@@ -1,4 +1,5 @@
 import type { RichTextAlign, RichTextDocument, RichTextMarks } from '../richTypes';
+import { isRichTextTextBlockType } from './richTextBlocks';
 
 // rich-canvas-word v1 草稿持久化。
 //
@@ -38,27 +39,45 @@ function isRichTextMarks(value: unknown): value is RichTextMarks {
   return isRecord(value);
 }
 
+function isRichTextRun(value: unknown) {
+  return isRecord(value) && typeof value.id === 'string' && typeof value.text === 'string' && isRichTextMarks(value.marks);
+}
+
 function isRichTextDocument(value: unknown): value is RichTextDocument {
   if (!isRecord(value) || typeof value.id !== 'string' || typeof value.title !== 'string' || !Array.isArray(value.blocks)) {
     return false;
   }
 
   return value.blocks.every((block) => {
-    if (!isRecord(block) || typeof block.id !== 'string' || !isRichTextAlign(block.align) || !Array.isArray(block.runs)) {
+    if (!isRecord(block) || typeof block.id !== 'string' || typeof block.type !== 'string') {
       return false;
     }
 
-    if (block.type !== 'heading' && block.type !== 'paragraph') {
-      return false;
+    if (isRichTextTextBlockType(block.type)) {
+      return isRichTextAlign(block.align) && Array.isArray(block.runs) && block.runs.every(isRichTextRun);
     }
 
-    return block.runs.every(
-      (run) =>
-        isRecord(run) &&
-        typeof run.id === 'string' &&
-        typeof run.text === 'string' &&
-        isRichTextMarks(run.marks),
-    );
+    if (block.type === 'table') {
+      return (
+        Array.isArray(block.rows) &&
+        block.rows.every(
+          (row) =>
+            isRecord(row) &&
+            typeof row.id === 'string' &&
+            Array.isArray(row.cells) &&
+            row.cells.every(
+              (cell) =>
+                isRecord(cell) &&
+                typeof cell.id === 'string' &&
+                (cell.align === undefined || isRichTextAlign(cell.align)) &&
+                Array.isArray(cell.runs) &&
+                cell.runs.every(isRichTextRun),
+            ),
+        )
+      );
+    }
+
+    return false;
   });
 }
 

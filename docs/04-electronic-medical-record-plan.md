@@ -2,16 +2,28 @@
 
 ## 模块目标
 
-在 `/medical-record` 路由中提供一个简易 Web 版 Word 电子病历查看和编辑体验。
+提供基础版 V0 和富文本 V1 两条电子病历编辑体验：
+
+- `/word-basic`：保留简易 Web 版 Word 电子病历查看和编辑体验。
+- `/medical-record-rich`：提供基于 `rich-canvas-word` 的富文本电子病历 V1。
+- `/medical-record`：历史兼容路径，当前重定向到 `/word-basic`。
 
 ## 当前路由
 
-`/medical-record`
+`/word-basic`
 
 在 `src/App.tsx` 中渲染：
 
 ```tsx
 <CanvasWordRecord patient={patientInfo} />
+```
+
+`/medical-record-rich`
+
+在 `src/App.tsx` 中渲染：
+
+```tsx
+<MedicalRichRecordEditor patient={patientInfo} records={records} />
 ```
 
 ## 文档模型
@@ -29,7 +41,9 @@
 - `paragraph`
 - `fieldGroup`
 
-当前通过 `documentToPlainText()` 将结构化文档转换为纯文本流，再交给 Canvas 编辑器排版。
+基础版 V0 通过 `documentToPlainText()` 将结构化文档转换为纯文本流，再交给 Canvas 编辑器排版。
+
+富文本 V1 通过 `src/lib/medical-record/richMedicalRecordDocument.ts` 将患者信息和体温单记录转换为 `RichTextDocument`，再交给 `RichCanvasWordRecord` 渲染和编辑。
 
 ## 当前病历内容
 
@@ -69,6 +83,19 @@
 - 撤销/重做。
 - 复制成功 Toast。
 
+## 富文本电子病历 V1 当前能力
+
+当前已实现：
+
+- 业务包装层 `MedicalRichRecordEditor`。
+- 患者信息、诊断、科室、床号等字段进入富文本文档。
+- 生命体征摘要可由当前体温单记录生成。
+- 编辑病历 / 归档预览模式切换。
+- 同步体征。
+- 业务保存入口。
+- 归档预览下保留复制、缩放、打印预览和 PDF 导出。
+- 编辑模式下保留保存、导出、撤销重做和基础格式命令。
+
 ## 为什么暂不引入 Fabric.js
 
 当前核心是文本流编辑器，不是图形对象编辑器。
@@ -85,16 +112,18 @@ Fabric.js 的优势在：
 
 ## 后续可选增强
 
-- 恢复结构化 block 模型，而不是只编辑纯文本。
-- 增加标题、段落、字段组的独立样式。
+- 为富文本电子病历增加业务工具栏：
+  - 插入患者字段。
+  - 插入当前日期。
+  - 插入病历结构模板。
+  - 插入常用病历短语。
+  - 插入医疗符号和单位。
+- 增加结构化字段绑定和保存协议。
+- 增加病历质控提示。
+- DOCX 导出。
+- 可选择文本 PDF。
+- placeholder 和空文档体验。
+- 跨 block 查找匹配。
 - 表格。
 - 页眉页脚。
-- 打印和 PDF 导出。
-- 查找替换。
-- 选区修复和多段选区。
-- 富文本样式：
-  - 加粗
-  - 下划线
-  - 字号
-  - 颜色
 - 图片/签名插入。
